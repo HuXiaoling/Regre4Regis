@@ -1,0 +1,20 @@
+{
+    "common":{
+        "dataset": "regress",
+        "activity": "train",
+        "num_classes": 2,
+        "img_file": "data",
+        "checkpoint_restore":"experiments/regress/train_outputs/model_best.pth"
+    },
+    "train":{
+        "train_datalist":"data_lists/regress/debug_list.csv",
+        "validation_datalist":"data_lists/regress/debug_list.csv",
+        "output_folder":"experiments/regress/train_outputs",
+        "loss_weight": 1,
+        "train_batch_size":1,
+        "validation_batch_size":1,
+        "learning_rate":0.01,
+        "num_epochs":10000,
+        "save_every": 50
+    }
+}

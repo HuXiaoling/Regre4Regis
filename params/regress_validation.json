@@ -1,0 +1,15 @@
+{
+    "common":{
+        "dataset": "CREMI",
+        "activity": "validation",
+        "num_classes": 2,
+        "img_file": "dataset/CREMI/train-volume.tif",
+        "gt_file": "dataset/CREMI/train-labels.tif",
+        "checkpoint_restore":"experiments/CREMI/train-outputs"
+    },
+    "validation":{
+        "validation_datalist":"data-lists/CREMI/validation-list.csv",
+        "output_folder":"experiments/CREMI/validation-outputs",
+        "batch_size":1
+    }
+}
