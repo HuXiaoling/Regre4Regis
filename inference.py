@@ -3,18 +3,19 @@
 # lr schedule
 import torch
 import numpy as np
+import nibabel as nib
 
 import argparse, json
 import os, glob, sys
 from time import time
 
-from dataloader import CREMI
+from dataloader_aug import regress
 from unet.unet_3d import UNet_3d
-from utilities import DC_and_CE_loss, SoftDiceLoss, softmax_helper, IOU
+from utilities import DC_and_CE_loss, SoftDiceLoss, softmax_helper
 import torch
-torch.cuda.empty_cache()
 from torchvision.utils import save_image
-
+import torch.nn as nn
+torch.cuda.empty_cache()
 
 def parse_func(args):
     ### Reading the parameters json file
@@ -26,7 +27,7 @@ def parse_func(args):
     mydict = {}
     mydict['dataset'] = params['common']['dataset']
     mydict['num_classes'] = int(params['common']['num_classes'])
-    mydict['files'] = [params['common']['img_file'], params['common']['gt_file']]
+    mydict['files'] = params['common']['img_file']
     mydict["checkpoint_restore"] = params['common']['checkpoint_restore']
 
     mydict['validation_datalist'] = params['validation']['validation_datalist']
@@ -48,11 +49,13 @@ def validation_func(mydict):
         os.makedirs(mydict['output_folder'])
 
     # network = UNet(n_channels=3, n_classes=mydict['num_classes']).to(device)
-    network = UNet_3d(in_dim=3, out_dim=2, num_filters=4).to(device)
+    network = UNet_3d(in_dim=1, out_dim=5, num_filters=4).to(device)
 
     soft_dice_args = {'batch_dice': True, 'smooth': 1e-5, 'do_bg': False}
-    val_dice_func = SoftDiceLoss(apply_nonlin=softmax_helper, **soft_dice_args)
-    val_iou_func = IOU(apply_nonlin=softmax_helper, **soft_dice_args)
+    ce_loss = nn.CrossEntropyLoss()
+    
+    sdl = SoftDiceLoss(apply_nonlin=softmax_helper, **soft_dice_args)
+    l1_loss = nn.L1Loss()
 
     if mydict['checkpoint_restore'] != "":
         network.load_state_dict(torch.load(mydict['checkpoint_restore']), strict=True)
@@ -62,10 +65,10 @@ def validation_func(mydict):
 
     # Test Data
 
-    if mydict['dataset'] == 'CREMI':
+    if mydict['dataset'] == 'regress':
 
         # Validation Data
-        validation_set = CREMI(mydict['validation_datalist'], mydict['files'])
+        validation_set = regress(mydict['validation_datalist'], mydict['files'])
         validation_generator = torch.utils.data.DataLoader(validation_set,batch_size=mydict['batch_size'],shuffle=False,num_workers=1, drop_last=False)
     else:
         print ('Wrong dataloader!')
@@ -75,38 +78,53 @@ def validation_func(mydict):
         network.eval()
         validation_iterator = iter(validation_generator)
         avg_dice = 0.0
-        avg_iou = 0.0
         for i in range(len(validation_generator)):
-            x, y_gt = next(validation_iterator)
+            x, mask, y_gt, affine = next(validation_iterator)
+            # x, mask, y_gt = next(validation_iterator)
+
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
+            mask = mask.to(device, non_blocking=True)
+            mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
             y_gt = y_gt.type(torch.cuda.FloatTensor)
 
             y_pred = network(x)
 
-            avg_dice += val_dice_func(y_pred, y_gt)
-            avg_iou += val_iou_func(y_pred, y_gt)
-            y_pred_binary = softmax_helper(y_pred)
-            y_pred_binary = torch.argmax(y_pred, dim=1)
+            pre_coor = y_pred[:,0:3,][0]
+            pre_coor = pre_coor.permute(1, 2, 3, 0)
+            pre_coor = pre_coor * 100
 
-            for j in range(x.shape[4]):
-                save_image(x[0,:,:,:,j], os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '.png'))
-                save_image(y_gt[0,:,:,:,j], os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '_gt.png'))
-                save_image(y_pred[0,:,:,j].float(), os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '_pred.png'))
-                save_image(y_pred_binary[0,:,:,j].float(), os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '_pred_binary.png'))
+            pre_coor_nii = nib.Nifti1Image(pre_coor.cpu().detach().numpy(), affine=affine[0])
+            pre_coor_nii.to_filename('samples/414456_coor_pred_ori.nii.gz')
+
+            y_pred_binary = softmax_helper(y_pred[:,3:5,:])
+            y_pred_binary = torch.argmax(y_pred[:,3:5,:], dim=1)
+            y_pred_binary_nii = nib.Nifti1Image(y_pred_binary[0].to(torch.float).cpu().detach().numpy(), affine=affine[0])
+            y_pred_binary_nii.to_filename('samples/414456_mask_pred_ori.nii.gz')
+
+            avg_dice += sdl(y_pred[:,3:5,:], mask)
+
+            regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask)/ (1e-6 + torch.mean(mask))
+            seg_loss = (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
+            import pdb; pdb.set_trace()
+            
+            # for j in range(x.shape[4]):
+                # save_image(x[0,:,:,:,j], os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '.png'))
+                # save_image(mask[0,:,:,:,j], os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '_gt.png'))
+                # save_image(y_pred[0,3:5,:,j].float(), os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '_pred.png'))
+                # save_image(y_pred_binary[0,:,:,j].float(), os.path.join(mydict['output_folder'], 'img' + str(mydict['batch_size'] * i + j) + '_pred_binary.png'))
+
 
         avg_dice = -avg_dice # because SoftDice returns negative dice
         avg_dice /= len(validation_generator)
-        avg_iou /= len(validation_generator)
     validation_end_time = time()
     print("End of epoch validation took {} seconds.\nAverage dice: {}".format(validation_end_time - validation_start_time, avg_dice))
-    print("End of epoch validation took {} seconds.\nAverage iou: {}".format(validation_end_time - validation_start_time, avg_iou))
 
 if __name__ == "__main__":
+    start_time = time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--params', type=str, help="Path to the parameters file")
-    parser.add_argument('--warp', type=float, default = 1e-2, help="the weight for warping loss")
     
     if len(sys.argv) == 1:
         print("Path to parameters file not provided. Exiting...")
@@ -115,7 +133,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         activity, mydict = parse_func(args)
 
-    mydict['checkpoint_restore'] = mydict['checkpoint_restore'] + '_' + str(args.warp) + '/model_best.pth'
-    mydict['output_folder'] = mydict['output_folder'] + '_' + str(args.warp)
     # call train
     validation_func(mydict)
+    end_time = time()
+    print("Dataloader took {} seconds.".format(end_time-start_time))

@@ -8,14 +8,13 @@ import argparse, json
 import os, glob, sys
 from time import time
 
-from dataloader import regress
+from dataloader_aug import regress
 from unet.unet_3d import UNet_3d
-from utilities import DC_and_CE_loss, SoftDiceLoss, softmax_helper
+from utilities import SoftDiceLoss, softmax_helper
 import torch
 import pdb
 import torch.nn as nn
-torch.cuda.empty_cache()
-
+from collections import OrderedDict
 
 def parse_func(args):
     ### Reading the parameters json file
@@ -34,6 +33,7 @@ def parse_func(args):
     mydict['validation_datalist'] = params['train']['validation_datalist']
     mydict['output_folder'] = params['train']['output_folder']
     mydict['loss_weight'] = params['train']['loss_weight']
+    mydict['loss_weight_uncer'] = params['train']['loss_weight_uncer']
     mydict['train_batch_size'] = int(params['train']['train_batch_size'])
     mydict['validation_batch_size'] = int(params['train']['validation_batch_size'])
     mydict['learning_rate'] = float(params['train']['learning_rate'])
@@ -66,11 +66,11 @@ def train_func(mydict):
 
     if mydict['dataset'] == 'regress':
         training_set = regress(mydict['train_datalist'], mydict['files'], is_training= True)
-        training_generator = torch.utils.data.DataLoader(training_set,batch_size=mydict['train_batch_size'],shuffle=False,num_workers=1, drop_last=True)
+        training_generator = torch.utils.data.DataLoader(training_set,batch_size=mydict['train_batch_size'],shuffle=True, drop_last=True)
 
         # Validation Data
         validation_set = regress(mydict['validation_datalist'], mydict['files'])
-        validation_generator = torch.utils.data.DataLoader(validation_set,batch_size=mydict['validation_batch_size'],shuffle=False,num_workers=1, drop_last=False)
+        validation_generator = torch.utils.data.DataLoader(validation_set,batch_size=mydict['validation_batch_size'],shuffle=False, drop_last=False)
     else:
         print ('Wrong dataloader!')
 
@@ -95,14 +95,27 @@ def train_func(mydict):
 
     # Losses
     soft_dice_args = {'batch_dice': True, 'smooth': 1e-5, 'do_bg': False}
-    train_loss_func = DC_and_CE_loss(soft_dice_args, {})
+    ce_loss = nn.CrossEntropyLoss()
 
     sdl = SoftDiceLoss(apply_nonlin=softmax_helper, **soft_dice_args)
-
     l1_loss = nn.L1Loss()
 
     if not os.path.exists(mydict['output_folder']):
         os.makedirs(mydict['output_folder'])
+
+    logfile = os.path.join(mydict['output_folder'], 'parameters.txt')
+    log_file = open(logfile, 'w')
+    p = OrderedDict()
+    p['loss_weight_seg'] = mydict['loss_weight']
+    p['loss_weight_uncer'] = mydict['loss_weight_uncer']
+    p['learning_rate'] = mydict['learning_rate']
+    p['epochs'] = mydict['num_epochs']
+    p['checkpoint_restore'] = mydict["checkpoint_restore"]
+    p['output_folder'] = mydict["output_folder"]
+
+    for key, val in p.items():
+        log_file.write(key + ':' + str(val) + '\n')
+    log_file.close()
 
     # Train loop
     best_dict = {}
@@ -112,29 +125,34 @@ def train_func(mydict):
 
     num_batches = len(training_generator)
     for epoch in range(mydict['num_epochs']):
-        torch.cuda.empty_cache() # cleanup
+
         network.to(device).train() # after .eval() in validation
 
         avg_train_loss = 0.0
         epoch_start_time = time()
 
         training_iterator = iter(training_generator)
-        for _ in range(num_batches):
+        for step in range(num_batches):
             optimizer.zero_grad()
 
-            x, mask, y_gt = next(training_iterator)
+            print("Step {}.".format(step))
+            x, mask, y_gt, affine = next(training_iterator)
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
             mask = mask.to(device, non_blocking=True)
-            mask = mask.type(torch.cuda.FloatTensor)
+            mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
             y_gt = y_gt.type(torch.cuda.FloatTensor)
 
             y_pred = network(x)
 
-            regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask)
-            seg_loss = sdl(y_pred[:,3:5,:], mask)
-            train_loss = regress_loss + mydict['loss_weight']* seg_loss
+            # import pdb; pdb.set_trace()
+            # regress_loss: divide by number of foreground pixel (inefficient)
+            # mask_logic = torch.cat([mask, mask, mask], dim=1)
+            # regress_loss = l1_loss(y_pred[:,0:3,][mask], y_gt[mask]) # make mask logic
+
+            train_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask) / (1e-6 + torch.mean(mask)) +\
+                mydict['loss_weight']* (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
             avg_train_loss += train_loss
 
             train_loss.backward()
@@ -145,14 +163,15 @@ def train_func(mydict):
         print("Epoch {} took {} seconds.\nAverage training loss: {}".format(epoch, epoch_end_time-epoch_start_time, avg_train_loss))
 
         validation_start_time = time()
-        if epoch % 10 == 0:
+        if epoch % 2 == 0:
             with torch.no_grad():
                 network.eval()
                 validation_iterator = iter(validation_generator)
                 avg_val_loss = 0.0
                 seg_dice = 0.0
-                for _ in range(len(validation_generator)):
-                    x, mask, y_gt = next(validation_iterator)
+                for validation_step in range(len(validation_generator)):
+                    print("Validation Step {}.".format(validation_step))
+                    x, mask, y_gt, _ = next(validation_iterator)
                     x = x.to(device, non_blocking=True)
                     x = x.type(torch.cuda.FloatTensor)
                     mask = mask.to(device, non_blocking=True)
@@ -161,11 +180,11 @@ def train_func(mydict):
                     y_gt = y_gt.type(torch.cuda.FloatTensor)
 
                     y_pred = network(x)
-                    regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask)
-                    seg_loss = sdl(y_pred[:,3:5,:], mask)
-                    val_loss = regress_loss + mydict['loss_weight']* seg_loss
+
+                    val_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask)/ (1e-6 + torch.mean(mask)) +\
+                          mydict['loss_weight']* (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
                     avg_val_loss += val_loss
-                    seg_dice += seg_loss
+                    seg_dice += sdl(y_pred[:,3:5,:], mask)
                 seg_dice = -seg_dice # because SoftDice returns negative dice
                 seg_dice /= len(validation_generator)
                 avg_val_loss /= len(validation_generator)
@@ -184,9 +203,9 @@ def train_func(mydict):
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
             print("Best epoch so far: {}\n".format(best_dict))
 
-            # # save checkpoint for save_every
-            # if epoch % mydict['save_every'] == 0:
-            #     torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
+            # save checkpoint for save_every
+            if epoch % mydict['save_every'] == 0:
+                torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -200,7 +219,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         activity, mydict = parse_func(args)
 
-    mydict['train_batch_size'] = args.train_batch
+    # mydict['train_batch_size'] = args.train_batch
 
     with open(args.params, 'r') as f:
         params = json.load(f)
