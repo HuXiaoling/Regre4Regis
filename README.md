@@ -8,9 +8,10 @@
 
     python3 inference.py --params params/regress_test.json
 
-### Option 2: Uncertainty training with only uncertainty loss and without dropout
+<!-- ### Option 2: Uncertainty training with only uncertainty loss and without dropout -->
+### Option 2: Uncertainty training with only uncertainty loss
 
-    Setting1: no dropout
+    Setting1: regress sigma for each channel separately (three sigmas)
 
         Step1: regress coordinates and masks only 
 
@@ -23,7 +24,7 @@
             python3 inference_uncer.py --params params/regress_test.json
 
 
-    Setting2: no dropout with single sigma
+    Setting2:  regress single sigma for three channel
 
         Step1: regress coordinates and masks only
 
