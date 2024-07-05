@@ -1,10 +1,14 @@
 # Regression for registration
 
+## Stage 1: regress the coordinates (and their uncertainty/distributions)
+
+### Pre-training without uncertainty branch:
+
     python3 main.py --params params/regress_train.json
 
     python3 inference.py --params params/regress_test.json
 
-Uncertainty training with only uncertainty loss and without dropout:
+### Uncertainty training with only uncertainty loss and without dropout:
 
     Setting1: no dropout
 
@@ -31,7 +35,7 @@ Uncertainty training with only uncertainty loss and without dropout:
 
             python3 inference_uncer_single_sigma.py --params params/regress_test.json
 
-Uncertainty training with dropout:
+### Uncertainty training with dropout:
 
     Setting1: line 10, line 30: nn.Dropout(p=0.2).
 
@@ -45,9 +49,7 @@ Uncertainty training with dropout:
 
     Setting5: line 30: nn.Dropout(p=0.2).
 
-Stage2: 
-    
-    CNN part: 13.53 seconds;
+## Stage 2: test-time fitting
 
     python ./scripts/test_inference_only_reg_many_models_ours.py 
         --input $INP 
