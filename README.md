@@ -9,7 +9,7 @@
     python3 inference.py --params params/regress_test.json
 
 <!-- ### Option 2: Uncertainty training with only uncertainty loss and without dropout -->
-### Option 2: Uncertainty training with only uncertainty loss
+### Option 2: Uncertainty training with uncertainty loss
 
     Setting1: regress sigma for each channel separately (three sigmas)
 
