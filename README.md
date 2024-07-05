@@ -2,13 +2,13 @@
 
 ## Stage 1: regress the coordinates (and their uncertainty/distributions)
 
-### Pre-training without uncertainty branch:
+### Option 1: Pre-training without uncertainty branch
 
     python3 main.py --params params/regress_train.json
 
     python3 inference.py --params params/regress_test.json
 
-### Uncertainty training with only uncertainty loss and without dropout:
+### Option 2: Uncertainty training with only uncertainty loss and without dropout
 
     Setting1: no dropout
 
@@ -35,7 +35,7 @@
 
             python3 inference_uncer_single_sigma.py --params params/regress_test.json
 
-### Uncertainty training with dropout:
+### Option 3: Uncertainty training with dropout
 
     Setting1: line 10, line 30: nn.Dropout(p=0.2).
 
@@ -49,7 +49,7 @@
 
     Setting5: line 30: nn.Dropout(p=0.2).
 
-## Stage 2: test-time fitting
+## Stage 2: Test-time fitting
 
     python ./scripts/test_inference_only_reg_many_models_ours.py 
         --input $INP 
