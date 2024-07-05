@@ -1,6 +1,6 @@
 # Regression for registration
 
-## Stage 1: regress the coordinates (and their uncertainty/distributions)
+## Stage 1: Regress the coordinates (and their uncertainty/distributions)
 
 ### Option 1: Pre-training without uncertainty branch
 
