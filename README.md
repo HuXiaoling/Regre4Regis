@@ -35,7 +35,7 @@
 
             python3 inference_uncer_single_sigma.py --params params/regress_test.json
 
-### Option 3: Uncertainty training with dropout
+<!-- ### Option 3: Uncertainty training with dropout
 
     Setting1: line 10, line 30: nn.Dropout(p=0.2).
 
@@ -47,7 +47,7 @@
 
     Setting4: line 30: nn.Dropout(p=0.5).
 
-    Setting5: line 30: nn.Dropout(p=0.2).
+    Setting5: line 30: nn.Dropout(p=0.2). -->
 
 ## Stage 2: Test-time fitting
 
