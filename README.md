@@ -19,7 +19,7 @@
         
         Step2: regress sigma
 
-            python3 main_uncer.py --params params/regress_train.json ("mode": "finetune")
+            python3 main_uncer.py --params params/regress_train.json ("mode": "training/finetune")
 
             python3 inference_uncer.py --params params/regress_test.json
 
@@ -32,7 +32,7 @@
         
         Step2: regress sigma
 
-            python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "finetune")
+            python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "training/finetune")
 
             python3 inference_uncer_single_sigma.py --params params/regress_test.json
 

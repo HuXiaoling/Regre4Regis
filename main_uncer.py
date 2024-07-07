@@ -135,7 +135,7 @@ def train_func(mydict):
     print("Let the training begin!")
 
     scaler = torch.cuda.amp.GradScaler()
-    writer = SummaryWriter()
+    writer = SummaryWriter(mydict['output_folder'])
     
     num_batches = len(training_generator)
     for epoch in range(mydict['num_epochs']):
