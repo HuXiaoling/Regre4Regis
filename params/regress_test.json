@@ -1,0 +1,14 @@
+{
+    "common":{
+        "dataset": "regress",
+        "activity": "validation",
+        "num_classes": 2,
+        "img_file": "data",
+        "checkpoint_restore":"experiments/regress/finetune_single_sigma_lap_l2_05_01_5/model_best.pth"
+    },
+    "validation":{
+        "validation_datalist":"data_lists/regress/test_list.csv",
+        "output_folder":"experiments/regress/test",
+        "batch_size":1
+    }
+}

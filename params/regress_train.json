@@ -4,17 +4,18 @@
         "activity": "train",
         "num_classes": 2,
         "img_file": "data",
-        "checkpoint_restore":"experiments/regress/pre_train_single_sigma_l2_01_2/model_best.pth"
+        "checkpoint_restore":"experiments/regress/pre_train_single_sigma_l2_005_1/model_best.pth"
     },
     "train":{
         "train_datalist":"data_lists/regress/train_list.csv",
         "validation_datalist":"data_lists/regress/validation_list.csv",
         "mode": "training",
         "regress_loss": "l2",
-        "uncer": "gaussian",
-        "output_folder":"experiments/regress/finetune_single_sigma_gaussian_l2_01_01_1",
-        "loss_weight": 0.1,
-        "loss_weight_uncer": 0.1,
+        "uncer": "lap",
+        "output_folder":"experiments/regress/finetune_single_sigma_lap_l2_005_001_1",
+        "loss_weight": 0.05,
+        "loss_weight_uncer": 0.01,
+        "num_workers":16,
         "learning_rate":0.01,
         "train_batch_size": 4,
         "validation_batch_size": 1,

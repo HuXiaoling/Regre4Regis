@@ -39,6 +39,7 @@ def parse_func(args):
     mydict['output_folder'] = params['train']['output_folder']
     mydict['loss_weight'] = params['train']['loss_weight']
     mydict['loss_weight_uncer'] = params['train']['loss_weight_uncer']
+    mydict['num_workers'] = params['train']['num_workers']
     mydict['train_batch_size'] = int(params['train']['train_batch_size'])
     mydict['validation_batch_size'] = int(params['train']['validation_batch_size'])
     mydict['learning_rate'] = float(params['train']['learning_rate'])
@@ -72,12 +73,12 @@ def train_func(mydict):
     if mydict['dataset'] == 'regress':
         training_set = regress(mydict['train_datalist'], mydict['files'], is_training= True)
         training_generator = torch.utils.data.DataLoader(training_set,batch_size=mydict['train_batch_size'],\
-                                                         shuffle=True, drop_last=True, num_workers=6, pin_memory=True)
+                                                         shuffle=True, drop_last=True, num_workers=mydict['num_workers'], pin_memory=True)
 
         # Validation Data
         validation_set = regress(mydict['validation_datalist'], mydict['files'])
         validation_generator = torch.utils.data.DataLoader(validation_set,batch_size=mydict['validation_batch_size'],\
-                                                           shuffle=False, drop_last=False, num_workers=6, pin_memory=True)
+                                                           shuffle=False, drop_last=False, num_workers=mydict['num_workers'], pin_memory=True)
     else:
         print ('Wrong dataloader!')
 
@@ -119,6 +120,7 @@ def train_func(mydict):
     p['uncer'] = mydict['uncer']
     p['loss_weight_seg'] = mydict['loss_weight']
     p['loss_weight_uncer'] = mydict['loss_weight_uncer']
+    p['num_workers'] = mydict['num_workers']
     p['learning_rate'] = mydict['learning_rate']
     p['epochs'] = mydict['num_epochs']
     p['checkpoint_restore'] = mydict["checkpoint_restore"]
