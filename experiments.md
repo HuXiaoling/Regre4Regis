@@ -51,27 +51,6 @@ Finetune experimental results (loss weight = 0.5) by increasing uncertainty loss
 | 6 channels    | 1 (0.0246)    | 0.5 (-0.7174) | Laplacian  0.1  (0.9362)  | &check; | &check; | &check; | &check; | Done  |
 | 6 channels    | 1 (0.0243)    | 0.5 (-0.6252) | Laplacian  0.5  (0.9320)  | &check; | &check; | &check; | &check; | Done  |
 
-Finetune experimental results (loss weight = 0.05) by increasing uncertainty loss weight:
-
-| Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
-| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1             | 0.05          | Gaussian   0.01           |  |  |  |  |           |
-| 8 channels    | 1             | 0.05          | Gaussian   0.05           |  |  |  |  |           |
-| 8 channels    | 1             | 0.05          | Gaussian   0.1            |  |  |  |  |           |
-| 8 channels    | 1             | 0.05          | Gaussian   0.5            |  |  |  |  | Running   |
-| 8 channels    | 1             | 0.05          | Laplacian  0.01           |  |  |  |  |           |
-| 8 channels    | 1             | 0.05          | Laplacian  0.05           |  |  |  |  |           |
-| 8 channels    | 1             | 0.05          | Laplacian  0.1            |  |  |  |  |           |
-| 8 channels    | 1             | 0.05          | Laplacian  0.5            |  |  |  |  | Running   |
-| 6 channels    | 1             | 0.05          | Gaussian   0.01           |  |  |  |  |           |
-| 6 channels    | 1             | 0.05          | Gaussian   0.05           |  |  |  |  |           |
-| 6 channels    | 1             | 0.05          | Gaussian   0.1            |  |  |  |  |           |
-| 6 channels    | 1             | 0.05          | Gaussian   0.5            |  |  |  |  | Running   |
-| 6 channels    | 1             | 0.05          | Laplacian  0.01           |  |  |  |  |           |
-| 6 channels    | 1             | 0.05          | Laplacian  0.05           |  |  |  |  |           |
-| 6 channels    | 1             | 0.05          | Laplacian  0.1            |  |  |  |  |           |
-| 6 channels    | 1             | 0.05          | Laplacian  0.5            |  |  |  |  | Running   |
-
 Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss weight:
 
 | Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
@@ -92,3 +71,45 @@ Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss
 | 6 channels    | 1             | 0.1           | Laplacian  0.05           |  |  |  |  | Done' |
 | 6 channels    | 1 (0.1246)    | 0.1 (-0.7171) | Laplacian  0.1  (5.2980)  |  |  |  |  | Done' |
 | 6 channels    | 1             | 0.1           | Laplacian  0.5            |  |  |  |  | Done  |
+
+Finetune experimental results (loss weight = 0.05) by increasing uncertainty loss weight:
+
+| Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
+| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| 8 channels    | 1             | 0.05          | Gaussian   0.01           |  |  |  |  | Running   |
+| 8 channels    | 1             | 0.05          | Gaussian   0.05           |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Gaussian   0.1            |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Gaussian   0.5            |  |  |  |  | Running   |
+| 8 channels    | 1             | 0.05          | Laplacian  0.01           |  |  |  |  | Running   |
+| 8 channels    | 1             | 0.05          | Laplacian  0.05           |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Laplacian  0.1            |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Laplacian  0.5            |  |  |  |  | Running   |
+| 6 channels    | 1             | 0.05          | Gaussian   0.01           |  |  |  |  | Running   |
+| 6 channels    | 1             | 0.05          | Gaussian   0.05           |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Gaussian   0.1            |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Gaussian   0.5            |  |  |  |  | Running   |
+| 6 channels    | 1             | 0.05          | Laplacian  0.01           |  |  |  |  | Running   |
+| 6 channels    | 1             | 0.05          | Laplacian  0.05           |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Laplacian  0.1            |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Laplacian  0.5            |  |  |  |  | Running   |
+
+Finetune experimental results (loss weight = 0.01) by increasing uncertainty loss weight:
+
+| Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
+| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| 8 channels    | 1             | 0.05          | Gaussian   0.01           |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Gaussian   0.05           |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Gaussian   0.1            |  |  |  |  | Running   |
+| 8 channels    | 1             | 0.05          | Gaussian   0.5            |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Laplacian  0.01           |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Laplacian  0.05           |  |  |  |  |           |
+| 8 channels    | 1             | 0.05          | Laplacian  0.1            |  |  |  |  | Running   |
+| 8 channels    | 1             | 0.05          | Laplacian  0.5            |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Gaussian   0.01           |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Gaussian   0.05           |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Gaussian   0.1            |  |  |  |  | Running   |
+| 6 channels    | 1             | 0.05          | Gaussian   0.5            |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Laplacian  0.01           |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Laplacian  0.05           |  |  |  |  |           |
+| 6 channels    | 1             | 0.05          | Laplacian  0.1            |  |  |  |  | Running   |
+| 6 channels    | 1             | 0.05          | Laplacian  0.5            |  |  |  |  |           |
