@@ -7,15 +7,16 @@ from sklearn.metrics import mean_squared_error
 
 # Read in the atlas and its header
 
-MNIatlas = nib.load('samples/mni.nii.gz')
+# MNIatlas = nib.load('samples/mni.nii.gz')
+MNIatlas = nib.load('samples/mni.seg.nii.gz')
 MNIintensities = MNIatlas.get_fdata()
 MNIaffine = MNIatlas.affine
 
-gt_mni = nib.load('samples/414456.mni_coords.nii.gz').get_fdata()
+gt_mni = nib.load('samples/ABIDE/sub-0001.mni_coords.nii.gz').get_fdata()
 
-pred_mni = nib.load('samples/414456_coor_pred.nii.gz').get_fdata()
-pred_mni_affine = nib.load('samples/414456_coor_pred.nii.gz').affine
-M = nib.load('data/414456.mask.nii.gz').get_fdata()
+pred_mni = nib.load('samples/ABIDE/sub-0001_coor_pred.nii.gz').get_fdata()
+pred_mni_affine = nib.load('samples/ABIDE/sub-0001_coor_pred.nii.gz').affine
+M = nib.load('samples/ABIDE/sub-0001.mask.nii.gz').get_fdata()
 
 xx = pred_mni[:, :, :, 0] * M # M is the brain mask, mni is the prediction
 yy = pred_mni[:, :, :, 1] * M
@@ -44,7 +45,7 @@ for i in range(xx.shape[0]):
             DEFORMED[i,j,k] = MNIintensities[int(np.round(i2[i,j,k])), int(np.round(j2[i,j,k])), int(np.round(k2[i,j,k]))]
 
 new_image = nib.Nifti1Image(DEFORMED, affine = pred_mni_affine)
-nib.save(new_image, 'samples/414456_direct.nii.gz')
+nib.save(new_image, 'samples/ABIDE/sub-0001_direct.nii.gz')
 # Version =2: deform yourself with trilinear interpolation (scipy / rgi)
 # No need to clip to 0, shape as rgi will just gives you zeros if you're out of bounds
 
@@ -59,5 +60,5 @@ nib.save(new_image, 'samples/414456_direct.nii.gz')
 
 diff = np.sqrt(np.mean((gt_mni - pred_mni) ** 2, axis=3))
 diff_mni = nib.Nifti1Image(diff, affine = pred_mni_affine)
-nib.save(diff_mni, 'samples/diff.nii.gz')
+nib.save(diff_mni, 'samples/ABIDE/sub-0001_diff.nii.gz')
 
