@@ -35,7 +35,8 @@ class regress(data.Dataset):
         self.dataCPU = {}
         self.dataCPU['image'] = []
         self.dataCPU['mask'] = []
-        self.dataCPU['label'] = []
+        self.dataCPU['seg'] = []
+        self.dataCPU['coord'] = []
         self.dataCPU['affine'] = []
 
         self.indices = []
@@ -56,12 +57,14 @@ class regress(data.Dataset):
 
             im_path = pjoin(self.imgfolder, filename) + '.image.nii.gz'
             mask_path = pjoin(self.imgfolder, filename) + '.mask.nii.gz'
+            seg_path = pjoin(self.imgfolder, filename) + '.seg.nii.gz'
             gt_path = pjoin(self.gtfolder, filename) + '.mni_coords.nii.gz'
 
             self.indices.append((i))
             self.dataCPU['image'].append(im_path)
             self.dataCPU['mask'].append(mask_path)
-            self.dataCPU['label'].append(gt_path)
+            self.dataCPU['seg'].append(seg_path)
+            self.dataCPU['coord'].append(gt_path)
 
     def __len__(self):
         return len(self.indices)
@@ -71,15 +74,33 @@ class regress(data.Dataset):
 
         im_path = self.dataCPU['image'][index] #HW
         mask_path = self.dataCPU['mask'][index] #HW
-        gt_path = self.dataCPU['label'][index] #HW
+        seg_path = self.dataCPU['seg'][index] #HW
+        gt_path = self.dataCPU['coord'][index] #HW
 
         img = nib.load(im_path).get_fdata()
         affine = nib.load(im_path).affine
         mask = nib.load(mask_path).get_fdata()
+        seg = nib.load(seg_path).get_fdata()
         gt = nib.load(gt_path).get_fdata()
         
         img = torch.from_numpy(img)
+        seg = torch.from_numpy(seg)
         mask = torch.from_numpy(mask)
+        
+        label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 
+                                   2, 3, 4, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
+                                   41, 42, 43, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
+
+        n_labels = len(label_list_segmentation)
+
+        # create look up table
+        lut = torch.zeros(10000, dtype=torch.long)
+        for l in range(n_labels):
+            lut[label_list_segmentation[l]] = l
+
+        onehotmatrix = torch.eye(n_labels, dtype=torch.float64)
+        label = np.squeeze(seg)
+        seg_onehot = onehotmatrix[lut[label.long()]]
         
         valid_value = img * mask
         non_zero_values = valid_value[valid_value != 0]
@@ -89,6 +110,7 @@ class regress(data.Dataset):
 
         torch_img = torch.unsqueeze(img, dim=0)
         torch_mask = torch.unsqueeze(mask, dim=0)
+        torch_onehot = seg_onehot.permute(3, 0, 1, 2)
         torch_gt = gt.permute(3, 0, 1, 2)
 
         if self.is_training:
@@ -101,7 +123,7 @@ class regress(data.Dataset):
                 cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
             ])
             
-            torch_mask, torch_img, torch_gt = transform(torch_mask, torch_img, torch_gt)
+            torch_mask, torch_img, torch_gt, torch_onehot = transform(torch_mask, torch_img, torch_gt, torch_onehot)
 
             # solution 2
             # transform = cc.ctx.batch(SequentialTransform([
@@ -119,15 +141,19 @@ class regress(data.Dataset):
             torch_mask[torch_mask >= 0.5] = 1.0
             torch_mask[torch_mask < 0.5] = 0.0
 
-        return torch_img, torch_mask, torch_gt, affine
+            torch_label = torch.argmax(torch_onehot, axis=0).to(dtype=torch.int)
+            onehot_matrix = torch.eye(n_labels)[torch_label]
+            torch_onehot = onehot_matrix.permute(3, 0, 1, 2)
+
+        return torch_img, torch_mask, torch_gt, torch_onehot, affine
 
 if __name__ == "__main__":
     start_time = time()
-    training_set = regress('data_lists/regress/test_list.csv', 'samples/ATLAS/', is_training=False)
+    training_set = regress('data_lists/regress/train_list.csv', 'data/', is_training=True)
     trainloader = data.DataLoader(training_set,batch_size=1,shuffle=True, drop_last=True) 
 
     batch = next(iter(trainloader))
-    input, mask, target, affine = batch
+    input, mask, target, seg, affine = batch
 
     # padded_input = torch.zeros(1,1,256, 256, 256)
     # padded_input[0,0,0:input.shape[2], 0:input.shape[3], 0:input.shape[4]] = input[0,0,:,:,:]
@@ -142,6 +168,11 @@ if __name__ == "__main__":
     target = target.permute(1, 2, 3, 0)
     new_target = nib.Nifti1Image(target.cpu().detach().numpy(), affine=affine[0])
     new_target.to_filename('samples/aug_target.nii.gz')
+    
+    seg = seg[0,:,:,:,:]
+    seg = seg.permute(1, 2, 3, 0)   
+    new_seg = nib.Nifti1Image(seg.cpu().detach().numpy(), affine=affine[0])
+    new_seg.to_filename('samples/aug_seg.nii.gz')
 
     end_time = time()
     print("Dataloader took {} seconds.".format(end_time-start_time))
