@@ -165,9 +165,9 @@ def train_func(mydict):
             DEFaffseg = torch.empty_like(mask)
             with torch.autocast(device_type='cuda', dtype=torch.float16):
                 y_pred = network(x)
-                for i in range(x.shape[0]):
-                    import pdb; pdb.set_trace()
-                    DEFaff[i], DEFaffseg[i] = least_square_fitting(x[i,:], y_pred[i,0:5,:], affine[i,:], device='cuda')
+                # for i in range(x.shape[0]):
+                #     channels_to_select = [0, 1, 2, 6, 7]
+                #     DEFaff[i], DEFaffseg[i] = least_square_fitting(x[i,:], affine[i,:], y_pred[i, channels_to_select, :], device='cuda')
 
                 seg_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
 

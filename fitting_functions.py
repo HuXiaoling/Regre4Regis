@@ -13,35 +13,27 @@ import nibabel as nib
 from dataloader_aug_cc import regress
 from torch.utils import data
 
-def least_square_fitting(im, aff, device='cuda'):
+def least_square_fitting(im, aff, pred, device='cuda'):
     im = torch.squeeze(im)
     aff = aff.detach().cpu().numpy()
     im_native = im.clone()
     aff_native = np.copy(aff)
-    im, aff = torch_resize(im, aff, 1.0, device=device)
-    im, aff = align_volume_to_ref(im, aff, aff_ref=np.eye(4), return_aff=True, n_dims=3)
+    # im, aff = torch_resize(im, aff, 1.0, device=device)
+    # im, aff = align_volume_to_ref(im, aff, aff_ref=np.eye(4), return_aff=True, n_dims=3)
 
-    W = (np.ceil(np.array(im.shape) / 32.0) * 32).astype('int')
-    idx = np.floor((W - im.shape) / 2).astype('int')
-    S = torch.zeros(*W, dtype=torch.float32, device=device)
-    S[idx[0]:idx[0] + im.shape[0], idx[1]:idx[1] + im.shape[1], idx[2]:idx[2] + im.shape[2]] = im
+    # import pdb; pdb.set_trace()
+    # model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to(torch.device(device))
+    # model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
+    # pred = model(im[None, None, ...])
+    # channels_to_select = [0, 1, 2, 6, 7]
+    # pred = pred[0, channels_to_select, :, :]
 
-    model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to(torch.device(device))
-    model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
-    pred = model(S[None, None, ...]) 
-    channels_to_select = [0, 1, 2, 6, 7]
-    pred = pred[:, channels_to_select, :, :]
+    pred_mask_temp = pred[4:5,...] > pred[3:4,...]
+    normalizer = torch.median(im[pred_mask_temp[0,...]])
 
-    # model.load_state_dict(torch.load('experiments/regress/train_outputs_full_aug_yogurt_2/model_best.pth'))
-    # pred = model(S[None, None, ...]) 
-
-    pred_mask_temp = pred[:,4:5,...] > pred[:,3:4,...]
-    normalizer = torch.median(S[pred_mask_temp[0,0,...]])
-
-    S /= normalizer    
+    im /= normalizer    
     pred = 100 * pred
-    pred_mni = pred[0,:, idx[0]:idx[0] + im.shape[0], idx[1]:idx[1] + im.shape[1], idx[2]:idx[2] + im.shape[2]].permute([1, 2, 3, 0])
-    # pred_mni = pred[:, idx[0]:idx[0] + im.shape[0], idx[1]:idx[1] + im.shape[1], idx[2]:idx[2] + im.shape[2]].permute([1, 2, 3, 0])
+    pred_mni = pred.permute([1, 2, 3, 0])
 
     TT = np.linalg.inv(aff) @ aff_native
     inter = rgi((np.arange(pred_mni.shape[0]), np.arange(pred_mni.shape[1]), np.arange(pred_mni.shape[2])), pred_mni.detach().cpu().numpy(), bounds_error=False, fill_value=0)
@@ -114,9 +106,15 @@ if __name__ == "__main__":
     im, mask, target, seg, aff = batch
     im = im[0,:].to('cuda')
     aff = aff[0,:].to('cuda')
+
+    model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to('cuda')
+    model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
     import pdb; pdb.set_trace()
+    pred = model(im[None, ...].to(dtype=torch.float)) 
+    channels_to_select = [0, 1, 2, 6, 7]
+    pred = pred[0, channels_to_select, :, :]
     
-    DEFaff, DEFaffseg = least_square_fitting(im, aff, device='cuda')
+    DEFaff, DEFaffseg = least_square_fitting(im, aff, pred, device='cuda')
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 
