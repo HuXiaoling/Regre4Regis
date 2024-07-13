@@ -74,12 +74,12 @@ def train_func(mydict):
     if mydict['dataset'] == 'regress':
         training_set = regress(mydict['train_datalist'], mydict['files'], is_training= True)
         training_generator = torch.utils.data.DataLoader(training_set,batch_size=mydict['train_batch_size'],\
-                                                         shuffle=True, drop_last=True, num_workers=mydict['num_workers'])
+                                                         shuffle=True, drop_last=True, num_workers=mydict['num_workers'], pin_memory=False)
 
         # Validation Data
         validation_set = regress(mydict['validation_datalist'], mydict['files'])
         validation_generator = torch.utils.data.DataLoader(validation_set,batch_size=mydict['validation_batch_size'],\
-                                                           shuffle=False, drop_last=False, num_workers=mydict['num_workers'])
+                                                           shuffle=False, drop_last=False, num_workers=mydict['num_workers'], pin_memory=False)
     else:
         print ('Wrong dataloader!')
 
@@ -167,7 +167,7 @@ def train_func(mydict):
                 y_pred = network(x)
                 for i in range(x.shape[0]):
                     channels_to_select = [0, 1, 2, 6, 7]
-                    DEFaff[i], DEFaffseg[i] = least_square_fitting(x[i,:], affine[i,:], y_pred[i, channels_to_select, :], device='cuda')
+                    DEFaff[i], DEFaffseg[i] = least_square_fitting(x[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
 
                 seg_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
 

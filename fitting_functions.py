@@ -13,20 +13,8 @@ import nibabel as nib
 from dataloader_aug_cc import regress
 from torch.utils import data
 
-def least_square_fitting(im, aff, pred, device='cuda'):
+def least_square_fitting(im, pred):
     im = torch.squeeze(im)
-    aff = aff.detach().cpu().numpy()
-    im_native = im.clone()
-    aff_native = np.copy(aff)
-    # im, aff = torch_resize(im, aff, 1.0, device=device)
-    # im, aff = align_volume_to_ref(im, aff, aff_ref=np.eye(4), return_aff=True, n_dims=3)
-
-    import pdb; pdb.set_trace()
-    # model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to(torch.device(device))
-    # model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
-    # pred = model(im[None, None, ...])
-    # channels_to_select = [0, 1, 2, 6, 7]
-    # pred = pred[0, channels_to_select, :, :]
 
     pred_mask_temp = pred[4:5,...] > pred[3:4,...]
     normalizer = torch.median(im[pred_mask_temp[0,...]])
@@ -35,27 +23,16 @@ def least_square_fitting(im, aff, pred, device='cuda'):
     pred = 100 * pred
     pred_mni = pred.permute([1, 2, 3, 0])
 
-    TT = np.linalg.inv(aff) @ aff_native
-    inter = rgi((np.arange(pred_mni.shape[0]), np.arange(pred_mni.shape[1]), np.arange(pred_mni.shape[2])), pred_mni.detach().cpu().numpy(), bounds_error=False, fill_value=0)
-    ig, jg, kg = np.meshgrid(np.arange(im_native.shape[0]), np.arange(im_native.shape[1]), np.arange(im_native.shape[2]), indexing='ij', sparse=False)
-    iig = TT[0,0] * ig + TT[0,1] * jg + TT[0,2] * kg + TT[0,3]
-    jjg = TT[1,0] * ig + TT[1,1] * jg + TT[1,2] * kg + TT[1,3]
-    kkg = TT[2,0] * ig + TT[2,1] * jg + TT[2,2] * kg + TT[2,3]
-    pred_mni_resampled = torch.tensor(inter((iig, jjg, kkg)), device=device, dtype=torch.float32)
-    pred_mni = pred_mni_resampled
-    aff = aff_native
-    im = im_native
-
     y_pred_binary = torch.argmax(pred_mni[...,3:5], dim=-1)
-    M = torch.tensor(binary_fill_holes((y_pred_binary > 0.5).detach().cpu().numpy()), device=device, dtype=torch.bool)
+    M = torch.tensor(binary_fill_holes((y_pred_binary > 0.5).detach().cpu().numpy()), device='cuda', dtype=torch.bool)
 
     MNISeg, Maff2 = MRIread('fitting/mni.seg.nii.gz', im_only=False, dtype='int32')
-    MNISeg = torch.tensor(MNISeg, device=device, dtype=torch.int16)
+    MNISeg = torch.tensor(MNISeg, device='cuda', dtype=torch.int16)
     
     MNI, aff2 = MRIread('fitting/mni.nii.gz')
     A = np.linalg.inv(aff2)
-    MNI = torch.tensor(MNI, device=device, dtype=torch.float32)
-    A = torch.tensor(A, device=device, dtype=torch.float32)
+    MNI = torch.tensor(MNI, device='cuda', dtype=torch.float32)
+    A = torch.tensor(A, device='cuda', dtype=torch.float32)
     xx = pred_mni[:, :, :, 0][M]
     yy = pred_mni[:, :, :, 1][M]
     zz = pred_mni[:, :, :, 2][M]
@@ -63,14 +40,13 @@ def least_square_fitting(im, aff, pred, device='cuda'):
     jj = A[1, 0] * xx + A[1, 1] * yy + A[1, 2] * zz + A[1, 3]
     kk = A[2, 0] * xx + A[2, 1] * yy + A[2, 2] * zz + A[2, 3]
 
-    print('Fitting affine transform with least squares')
     ri = np.arange(pred_mni.shape[0]).astype('float'); ri -= np.mean(ri); ri /= 100
     rj = np.arange(pred_mni.shape[1]).astype('float'); rj -= np.mean(rj); rj /= 100
     rk = np.arange(pred_mni.shape[2]).astype('float'); rk -= np.mean(rk); rk /= 100
     i, j, k = np.meshgrid(ri, rj, rk, sparse=False, indexing='ij')
-    i = torch.tensor(i, device=device, dtype=torch.float)[M]
-    j = torch.tensor(j, device=device, dtype=torch.float)[M]
-    k = torch.tensor(k, device=device, dtype=torch.float)[M]
+    i = torch.tensor(i, device='cuda', dtype=torch.float)[M]
+    j = torch.tensor(j, device='cuda', dtype=torch.float)[M]
+    k = torch.tensor(k, device='cuda', dtype=torch.float)[M]
     o = torch.ones_like(k)
     B = torch.stack([i, j, k, o], dim=1)
 
@@ -82,11 +58,11 @@ def least_square_fitting(im, aff, pred, device='cuda'):
     jj2aff = B @ fit_y
     kk2aff = B @ fit_z
 
-    valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device=device)
+    valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
     DEFaff = torch.zeros_like(pred_mni[..., 0])
     DEFaff[M] = valsAff
 
-    valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'nearest', device=device)
+    valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'nearest', device='cuda')
     DEFaffseg = torch.zeros_like(pred_mni[..., 0])
     DEFaffseg[M] = valsAff_seg
 
@@ -105,16 +81,15 @@ if __name__ == "__main__":
     batch = next(iter(trainloader))
     im, mask, target, seg, aff = batch
     im = im[0,:].to('cuda')
-    aff = aff[0,:].to('cuda')
+    aff = aff[0,:]
 
     model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to('cuda')
     model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
-    import pdb; pdb.set_trace()
     pred = model(im[None, ...].to(dtype=torch.float)) 
     channels_to_select = [0, 1, 2, 6, 7]
     pred = pred[0, channels_to_select, :, :]
     
-    DEFaff, DEFaffseg = least_square_fitting(im, aff, pred, device='cuda')
+    DEFaff, DEFaffseg = least_square_fitting(im, pred)
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 

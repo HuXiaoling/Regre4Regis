@@ -26,12 +26,11 @@ from cornucopia import (
 )
 
 class regress(data.Dataset):
-    def __init__(self, listpath, folderpaths, device='cuda', is_training=False):
+    def __init__(self, listpath, folderpaths, is_training=False):
 
         self.listpath = listpath
         self.imgfolder = folderpaths
         self.gtfolder = folderpaths
-        self.device = device
 
         self.dataCPU = {}
         self.dataCPU['image'] = []
@@ -84,24 +83,24 @@ class regress(data.Dataset):
         seg = nib.load(seg_path).get_fdata()
         gt = nib.load(gt_path).get_fdata()
         
-        img = torch.from_numpy(img).to(self.device)
-        seg = torch.from_numpy(seg).to(self.device)
-        mask = torch.from_numpy(mask).to(self.device)
+        img = torch.from_numpy(img)
+        seg = torch.from_numpy(seg)
+        mask = torch.from_numpy(mask)
         
-        label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 
-                                   2, 3, 4, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
-                                   41, 42, 43, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
+        # label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 
+        #                            2, 3, 4, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
+        #                            41, 42, 43, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
 
-        n_labels = len(label_list_segmentation)
+        # n_labels = len(label_list_segmentation)
 
-        # create look up table
-        lut = torch.zeros(10000, dtype=torch.long).to(self.device)
-        for l in range(n_labels):
-            lut[label_list_segmentation[l]] = l
+        # # create look up table
+        # lut = torch.zeros(10000, dtype=torch.long)
+        # for l in range(n_labels):
+        #     lut[label_list_segmentation[l]] = l
 
-        onehotmatrix = torch.eye(n_labels, dtype=torch.float64).to(self.device)
-        label = np.squeeze(seg)
-        seg_onehot = onehotmatrix[lut[label.long()]].to(self.device)
+        # onehotmatrix = torch.eye(n_labels, dtype=torch.float64)
+        # label = np.squeeze(seg)
+        # seg_onehot = onehotmatrix[lut[label.long()]]
         
         valid_value = img * mask
         non_zero_values = valid_value[valid_value != 0]
@@ -111,7 +110,8 @@ class regress(data.Dataset):
 
         torch_img = torch.unsqueeze(img, dim=0)
         torch_mask = torch.unsqueeze(mask, dim=0)
-        torch_onehot = seg_onehot.permute(3, 0, 1, 2)
+        # torch_onehot = seg_onehot.permute(3, 0, 1, 2)
+        torch_onehot = torch.unsqueeze(seg, dim=0)
         torch_gt = gt.permute(3, 0, 1, 2)
 
         if self.is_training:
@@ -139,12 +139,12 @@ class regress(data.Dataset):
             # torch_img = tmp2.squeeze(0)
             # torch_gt = tmp3.squeeze(0)
 
-            torch_mask[torch_mask >= 0.5] = 1.0
-            torch_mask[torch_mask < 0.5] = 0.0
+            # torch_mask[torch_mask >= 0.5] = 1.0
+            # torch_mask[torch_mask < 0.5] = 0.0
 
-            torch_label = torch.argmax(torch_onehot, axis=0).to(dtype=torch.int)
-            onehot_matrix = torch.eye(n_labels).to(self.device)[torch_label]
-            torch_onehot = onehot_matrix.permute(3, 0, 1, 2)
+            # torch_label = torch.argmax(torch_onehot, axis=0).to(dtype=torch.int)
+            # onehot_matrix = torch.eye(n_labels)[torch_label]
+            # torch_onehot = onehot_matrix.permute(3, 0, 1, 2)
 
         return torch_img, torch_mask, torch_gt, torch_onehot, affine
 
