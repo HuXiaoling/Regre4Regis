@@ -21,7 +21,7 @@ def least_square_fitting(im, aff, pred, device='cuda'):
     # im, aff = torch_resize(im, aff, 1.0, device=device)
     # im, aff = align_volume_to_ref(im, aff, aff_ref=np.eye(4), return_aff=True, n_dims=3)
 
-    # import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     # model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to(torch.device(device))
     # model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
     # pred = model(im[None, None, ...])

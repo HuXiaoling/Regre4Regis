@@ -26,11 +26,12 @@ from cornucopia import (
 )
 
 class regress(data.Dataset):
-    def __init__(self, listpath, folderpaths, is_training=False):
+    def __init__(self, listpath, folderpaths, device='cuda', is_training=False):
 
         self.listpath = listpath
         self.imgfolder = folderpaths
         self.gtfolder = folderpaths
+        self.device = device
 
         self.dataCPU = {}
         self.dataCPU['image'] = []
@@ -83,9 +84,9 @@ class regress(data.Dataset):
         seg = nib.load(seg_path).get_fdata()
         gt = nib.load(gt_path).get_fdata()
         
-        img = torch.from_numpy(img)
-        seg = torch.from_numpy(seg)
-        mask = torch.from_numpy(mask)
+        img = torch.from_numpy(img).to(self.device)
+        seg = torch.from_numpy(seg).to(self.device)
+        mask = torch.from_numpy(mask).to(self.device)
         
         label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 
                                    2, 3, 4, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
@@ -94,17 +95,17 @@ class regress(data.Dataset):
         n_labels = len(label_list_segmentation)
 
         # create look up table
-        lut = torch.zeros(10000, dtype=torch.long)
+        lut = torch.zeros(10000, dtype=torch.long).to(self.device)
         for l in range(n_labels):
             lut[label_list_segmentation[l]] = l
 
-        onehotmatrix = torch.eye(n_labels, dtype=torch.float64)
+        onehotmatrix = torch.eye(n_labels, dtype=torch.float64).to(self.device)
         label = np.squeeze(seg)
-        seg_onehot = onehotmatrix[lut[label.long()]]
+        seg_onehot = onehotmatrix[lut[label.long()]].to(self.device)
         
         valid_value = img * mask
         non_zero_values = valid_value[valid_value != 0]
-        median_non_zero = np.median(non_zero_values)
+        median_non_zero = torch.median(non_zero_values)
         img = img/median_non_zero
         gt = torch.from_numpy(gt/100)
 
@@ -142,7 +143,7 @@ class regress(data.Dataset):
             torch_mask[torch_mask < 0.5] = 0.0
 
             torch_label = torch.argmax(torch_onehot, axis=0).to(dtype=torch.int)
-            onehot_matrix = torch.eye(n_labels)[torch_label]
+            onehot_matrix = torch.eye(n_labels).to(self.device)[torch_label]
             torch_onehot = onehot_matrix.permute(3, 0, 1, 2)
 
         return torch_img, torch_mask, torch_gt, torch_onehot, affine
