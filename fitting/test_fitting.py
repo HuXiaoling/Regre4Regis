@@ -135,7 +135,7 @@ def main():
         pred_mni = pred[0, :, idx[0]:idx[0] + im.shape[0], idx[1]:idx[1] + im.shape[1], idx[2]:idx[2] + im.shape[2]].permute([1, 2, 3, 0])
 
         if True: # use_native:
-            # import pdb; pdt.set_trace()
+            # import pdb; pdb.set_trace()
             TT = np.linalg.inv(aff) @ aff_native
             inter = rgi((np.arange(pred_mni.shape[0]), np.arange(pred_mni.shape[1]), np.arange(pred_mni.shape[2])), pred_mni.detach().cpu().numpy(), bounds_error=False, fill_value=0)
             ig, jg, kg = np.meshgrid(np.arange(im_native.shape[0]), np.arange(im_native.shape[1]), np.arange(im_native.shape[2]), indexing='ij', sparse=False)
@@ -246,7 +246,7 @@ def main():
         DEFaffseg = torch.zeros_like(pred_mni[..., 0])
         DEFaffseg[M] = valsAff_seg
         MRIwrite(DEFaffseg.detach().cpu().numpy(), aff, args['output_dir'] + '/affine_deformation_least_squares_gridSeg_x.nii.gz')
-
+        import pdb; pdb.set_trace() 
         valsAff_seg = fast_3D_interp_torch(gridSeg_y, ii2aff, jj2aff, kk2aff, 'nearest', device)
         DEFaffseg = torch.zeros_like(pred_mni[..., 0])
         DEFaffseg[M] = valsAff_seg

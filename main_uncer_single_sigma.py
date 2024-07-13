@@ -152,7 +152,7 @@ def train_func(mydict):
             optimizer.zero_grad()
 
             print("Step {}.".format(step))
-            x, mask, y_gt, affine = next(training_iterator)
+            x, mask, y_gt, seg, affine = next(training_iterator)
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
             mask = mask.to(device, non_blocking=True)
@@ -221,7 +221,7 @@ def train_func(mydict):
                 seg_dice = 0.0
                 for validation_step in range(len(validation_generator)):
                     print("Validation Step {}.".format(validation_step))
-                    x, mask, y_gt, _ = next(validation_iterator)
+                    x, mask, y_gt, seg, affine = next(validation_iterator)
                     x = x.to(device, non_blocking=True)
                     x = x.type(torch.cuda.FloatTensor)
                     mask = mask.to(device, non_blocking=True)

@@ -16,6 +16,7 @@ import torch
 import pdb
 import torch.nn as nn
 from collections import OrderedDict
+from fitting_functions import least_square_fitting
 from torch.utils.tensorboard import SummaryWriter
 
 def parse_func(args):
@@ -160,8 +161,13 @@ def train_func(mydict):
             y_gt = y_gt.to(device, non_blocking=True)
             y_gt = y_gt.type(torch.cuda.FloatTensor)
 
+            DEFaff = torch.empty_like(x)
+            DEFaffseg = torch.empty_like(mask)
             with torch.autocast(device_type='cuda', dtype=torch.float16):
                 y_pred = network(x)
+                for i in range(x.shape[0]):
+                    import pdb; pdb.set_trace()
+                    DEFaff[i], DEFaffseg[i] = least_square_fitting(x[i,:], y_pred[i,0:5,:], affine[i,:], device='cuda')
 
                 seg_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
 

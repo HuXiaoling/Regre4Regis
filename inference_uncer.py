@@ -95,17 +95,17 @@ def validation_func(mydict):
             pre_coor = pre_coor * 100
 
             pre_coor_nii = nib.Nifti1Image(pre_coor.cpu().detach().numpy(), affine=affine[0])
-            pre_coor_nii.to_filename('samples/414456_coor_pred.nii.gz')
+            pre_coor_nii.to_filename('samples/coor_pred.nii.gz')
 
             pre_sigma = torch.exp(y_pred[:,3:6,][0])
             pre_sigma = pre_sigma.permute(1, 2, 3, 0)
             pre_sigma_nii = nib.Nifti1Image(torch.exp(pre_sigma).cpu().detach().numpy(), affine=affine[0])
-            pre_sigma_nii.to_filename('samples/414456_sigma_pred.nii.gz')
+            pre_sigma_nii.to_filename('samples/sigma_pred.nii.gz')
 
             y_pred_binary = softmax_helper(y_pred[:,6:8,:])
             y_pred_binary = torch.argmax(y_pred[:,6:8,:], dim=1)
             y_pred_binary_nii = nib.Nifti1Image(y_pred_binary[0].to(torch.float).cpu().detach().numpy(), affine=affine[0])
-            y_pred_binary_nii.to_filename('samples/414456_mask_pred.nii.gz')
+            y_pred_binary_nii.to_filename('samples/mask_pred.nii.gz')
 
             avg_dice += sdl(y_pred[:,6:8,:], mask)
 
