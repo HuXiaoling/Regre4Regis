@@ -122,12 +122,10 @@ class regress(data.Dataset):
                 cc.ctx.maybe(RandomGaussianNoiseTransform(include=torch_img), 0.5, shared=True),
             ])
 
-            transform_spatial = SequentialTransform([
-                cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
-            ])
+            transform_spatial = cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True)
 
             torch_img = transform_intensity(torch_img)
-            torch_mask, torch_img, torch_gt, torch_seg = transform_spatial(torch_mask, torch_img, torch_gt, torch_seg)
+            torch_img, torch_mask, torch_gt, torch_seg = transform_spatial(torch_img, torch_mask, torch_gt, torch_seg)
 
 
             # solution 2
