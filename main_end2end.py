@@ -7,6 +7,14 @@ import numpy as np
 import argparse, json
 import os, glob, sys
 from time import time
+import cornucopia as cc
+from cornucopia import (
+    RandomGaussianNoiseTransform,
+    RandomSmoothTransform,
+    RandomMulFieldTransform,
+    RandomAffineElasticTransform,
+    SequentialTransform,
+)
 
 # from dataloader_aug import regress
 from dataloader_aug_cc import regress
@@ -157,9 +165,60 @@ def train_func(mydict):
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
             mask = mask.to(device, non_blocking=True)
-            mask = mask.type(torch.cuda.FloatTensor) # make mask logic
+            # mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
             y_gt = y_gt.type(torch.cuda.FloatTensor)
+            seg = seg.to(device, non_blocking=True)
+
+            # Data Augmentation
+            transform_intensity = cc.ctx.batch(SequentialTransform([
+                cc.ctx.maybe(RandomSmoothTransform(include=x), 0.5, shared=True),
+                cc.ctx.maybe(RandomMulFieldTransform(include=x, order=1), 0.5, shared=True),
+                cc.ctx.maybe(RandomGaussianNoiseTransform(include=x), 0.5, shared=True),
+            ]))
+
+            transform_spatial = cc.ctx.batch(SequentialTransform([
+                cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
+            ]))
+
+            x = transform_intensity(x)
+            x, mask, y_gt, seg = transform_spatial(x, mask, y_gt, seg)
+            mask = mask.type(torch.cuda.FloatTensor)
+            seg = seg.type(torch.cuda.FloatTensor) 
+
+            # one hot encoding
+            label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 
+                            2, 3, 4, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
+                            41, 42, 43, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
+
+            n_labels = len(label_list_segmentation)
+
+            # create look up table
+            lut = torch.zeros(10000, dtype=torch.long, device=device)
+            for l in range(n_labels):
+                lut[label_list_segmentation[l]] = l
+
+            onehotmatrix = torch.eye(n_labels, dtype=torch.float64, device=device)
+            label = np.squeeze(seg)
+            seg_onehot = onehotmatrix[lut[label.long()]]
+            seg_onehot = seg_onehot.permute(0, 4, 1, 2, 3)
+
+            # test dataloader_aug_cc.py
+            # import nibabel as nib
+            # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+            # new_image.to_filename('samples/aug_image.nii.gz')
+
+            # new_mask = nib.Nifti1Image(mask[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+            # new_mask.to_filename('samples/aug_mask.nii.gz')
+
+            # y_gt = y_gt[0,:,:,:,:]
+            # y_gt = y_gt.permute(1, 2, 3, 0)
+            # new_target = nib.Nifti1Image(y_gt.cpu().detach().numpy(), affine=affine[0])
+            # new_target.to_filename('samples/aug_target.nii.gz')
+
+            # discrete_labels = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int)
+            # new_seg = nib.Nifti1Image(discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+            # new_seg.to_filename('samples/aug_seg.nii.gz')
 
             DEFaff = torch.empty_like(x)
             DEFaffseg = torch.empty_like(mask)

@@ -113,19 +113,19 @@ class regress(data.Dataset):
         torch_seg = torch.unsqueeze(seg, dim=0).to(dtype=torch.int)
         torch_gt = gt.permute(3, 0, 1, 2).to(dtype=torch.float32)
 
-        if self.is_training:
+        # if self.is_training:
 
-            # solution 1
-            transform_intensity = SequentialTransform([
-                cc.ctx.maybe(RandomSmoothTransform(include=torch_img), 0.5, shared=True),
-                cc.ctx.maybe(RandomMulFieldTransform(include=torch_img, order=1), 0.5, shared=True),
-                cc.ctx.maybe(RandomGaussianNoiseTransform(include=torch_img), 0.5, shared=True),
-            ])
+        #     # solution 1
+        #     transform_intensity = SequentialTransform([
+        #         cc.ctx.maybe(RandomSmoothTransform(include=torch_img), 0.5, shared=True),
+        #         cc.ctx.maybe(RandomMulFieldTransform(include=torch_img, order=1), 0.5, shared=True),
+        #         cc.ctx.maybe(RandomGaussianNoiseTransform(include=torch_img), 0.5, shared=True),
+        #     ])
 
-            transform_spatial = cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True)
+        #     transform_spatial = cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True)
 
-            torch_img = transform_intensity(torch_img)
-            torch_img, torch_mask, torch_gt, torch_seg = transform_spatial(torch_img, torch_mask, torch_gt, torch_seg)
+        #     torch_img = transform_intensity(torch_img)
+        #     torch_img, torch_mask, torch_gt, torch_seg = transform_spatial(torch_img, torch_mask, torch_gt, torch_seg)
 
 
             # solution 2
@@ -172,9 +172,7 @@ if __name__ == "__main__":
     new_target = nib.Nifti1Image(target.cpu().detach().numpy(), affine=affine[0])
     new_target.to_filename('samples/aug_target.nii.gz')
     
-    seg = seg[0,:,:,:,:]
-    seg = seg.permute(1, 2, 3, 0)   
-    new_seg = nib.Nifti1Image(seg.cpu().detach().numpy(), affine=affine[0])
+    new_seg = nib.Nifti1Image(seg[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
     new_seg.to_filename('samples/aug_seg.nii.gz')
 
     end_time = time()

@@ -7,6 +7,14 @@ import numpy as np
 import argparse, json
 import os, glob, sys
 from time import time
+import cornucopia as cc
+from cornucopia import (
+    RandomGaussianNoiseTransform,
+    RandomSmoothTransform,
+    RandomMulFieldTransform,
+    RandomAffineElasticTransform,
+    SequentialTransform,
+)
 
 # from dataloader_aug import regress
 from dataloader_aug_cc import regress
@@ -156,9 +164,37 @@ def train_func(mydict):
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
             mask = mask.to(device, non_blocking=True)
-            mask = mask.type(torch.cuda.FloatTensor) # make mask logic
+            # mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
             y_gt = y_gt.type(torch.cuda.FloatTensor)
+
+            # Data Augmentation
+            transform_intensity = cc.ctx.batch(SequentialTransform([
+                cc.ctx.maybe(RandomSmoothTransform(include=x), 0.5, shared=True),
+                cc.ctx.maybe(RandomMulFieldTransform(include=x, order=1), 0.5, shared=True),
+                cc.ctx.maybe(RandomGaussianNoiseTransform(include=x), 0.5, shared=True),
+            ]))
+
+            transform_spatial = cc.ctx.batch(SequentialTransform([
+                cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
+            ]))
+
+            x = transform_intensity(x)
+            x, mask, y_gt = transform_spatial(x, mask, y_gt)
+            mask = mask.type(torch.cuda.FloatTensor)
+
+            # test dataloader_aug_cc.py
+            # import nibabel as nib
+            # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+            # new_image.to_filename('samples/aug_image.nii.gz')
+
+            # new_mask = nib.Nifti1Image(mask[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+            # new_mask.to_filename('samples/aug_mask.nii.gz')
+
+            # y_gt = y_gt[0,:,:,:,:]
+            # y_gt = y_gt.permute(1, 2, 3, 0)
+            # new_target = nib.Nifti1Image(y_gt.cpu().detach().numpy(), affine=affine[0])
+            # new_target.to_filename('samples/aug_target.nii.gz')
 
             with torch.autocast(device_type='cuda', dtype=torch.float16):
                 y_pred = network(x)
