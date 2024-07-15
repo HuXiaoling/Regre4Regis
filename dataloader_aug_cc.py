@@ -108,23 +108,27 @@ class regress(data.Dataset):
         img = img/median_non_zero
         gt = torch.from_numpy(gt/100)
 
-        torch_img = torch.unsqueeze(img, dim=0)
-        torch_mask = torch.unsqueeze(mask, dim=0)
-        # torch_onehot = seg_onehot.permute(3, 0, 1, 2)
-        torch_onehot = torch.unsqueeze(seg, dim=0)
-        torch_gt = gt.permute(3, 0, 1, 2)
+        torch_img = torch.unsqueeze(img, dim=0).to(dtype=torch.float32)
+        torch_mask = torch.unsqueeze(mask, dim=0).to(dtype=torch.int)
+        torch_seg = torch.unsqueeze(seg, dim=0).to(dtype=torch.int)
+        torch_gt = gt.permute(3, 0, 1, 2).to(dtype=torch.float32)
 
         if self.is_training:
 
             # solution 1
-            transform = SequentialTransform([
+            transform_intensity = SequentialTransform([
                 cc.ctx.maybe(RandomSmoothTransform(include=torch_img), 0.5, shared=True),
                 cc.ctx.maybe(RandomMulFieldTransform(include=torch_img, order=1), 0.5, shared=True),
                 cc.ctx.maybe(RandomGaussianNoiseTransform(include=torch_img), 0.5, shared=True),
+            ])
+
+            transform_spatial = SequentialTransform([
                 cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
             ])
-            
-            torch_mask, torch_img, torch_gt, torch_onehot = transform(torch_mask, torch_img, torch_gt, torch_onehot)
+
+            torch_img = transform_intensity(torch_img)
+            torch_mask, torch_img, torch_gt, torch_seg = transform_spatial(torch_mask, torch_img, torch_gt, torch_seg)
+
 
             # solution 2
             # transform = cc.ctx.batch(SequentialTransform([
@@ -146,7 +150,7 @@ class regress(data.Dataset):
             # onehot_matrix = torch.eye(n_labels)[torch_label]
             # torch_onehot = onehot_matrix.permute(3, 0, 1, 2)
 
-        return torch_img, torch_mask, torch_gt, torch_onehot, affine
+        return torch_img, torch_mask, torch_gt, torch_seg, affine
 
 if __name__ == "__main__":
     start_time = time()
