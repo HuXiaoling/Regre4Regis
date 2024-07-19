@@ -2,14 +2,14 @@
 
 ## Stage 1: Regress the coordinates (and their uncertainty/distributions)
 
-### Option 1: Pre-training without uncertainty branch
+### Option 1: Only regress the coordinates directly
 ```
 python3 main.py --params params/regress_train.json
 
 python3 inference.py --params params/regress_test.json
 ```
 <!-- ### Option 2: Uncertainty training with only uncertainty loss and without dropout -->
-### Option 2: Uncertainty training with uncertainty loss
+### Option 2: Regress the coordinates as well the uncertainty
 
 #### Setting1: regress sigma for each channel separately (three sigmas)
 
