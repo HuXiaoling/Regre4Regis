@@ -3,39 +3,39 @@
 ## Stage 1: Regress the coordinates (and their uncertainty/distributions)
 
 ### Option 1: Pre-training without uncertainty branch
+```
+python3 main.py --params params/regress_train.json
 
-    python3 main.py --params params/regress_train.json
-
-    python3 inference.py --params params/regress_test.json
-
+python3 inference.py --params params/regress_test.json
+```
 <!-- ### Option 2: Uncertainty training with only uncertainty loss and without dropout -->
 ### Option 2: Uncertainty training with uncertainty loss
 
-    Setting1: regress sigma for each channel separately (three sigmas)
+#### Setting1: regress sigma for each channel separately (three sigmas)
 
-        Step1: regress coordinates and masks only 
+Step1: regress coordinates and masks only 
+```
+python3 main_uncer.py --params params/regress_train.json ("mode": "pre")
+```     
+Step2: regress sigma
+```
+python3 main_uncer.py --params params/regress_train.json ("mode": "training/finetune")
 
-            python3 main_uncer.py --params params/regress_train.json ("mode": "pre")
-        
-        Step2: regress sigma
+python3 inference_uncer.py --params params/regress_test.json
+```
 
-            python3 main_uncer.py --params params/regress_train.json ("mode": "training/finetune")
+#### Setting2:  regress single sigma for three channel
 
-            python3 inference_uncer.py --params params/regress_test.json
+Step1: regress coordinates and masks only
+```
+python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "pre")
+```     
+Step2: regress sigma
+```
+python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "training/finetune")
 
-
-    Setting2:  regress single sigma for three channel
-
-        Step1: regress coordinates and masks only
-
-            python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "pre")
-        
-        Step2: regress sigma
-
-            python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "training/finetune")
-
-            python3 inference_uncer_single_sigma.py --params params/regress_test.json
-
+python3 inference_uncer_single_sigma.py --params params/regress_test.json
+```
 <!-- ### Option 3: Uncertainty training with dropout
 
     Setting1: line 10, line 30: nn.Dropout(p=0.2).
