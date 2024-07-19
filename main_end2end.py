@@ -3,6 +3,7 @@
 # lr schedule
 import torch
 import numpy as np
+import nibabel as nib
 
 import argparse, json
 import os, glob, sys
@@ -164,6 +165,7 @@ def train_func(mydict):
             x, mask, y_gt, seg, affine = next(training_iterator)
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
+            x_native = x
             mask = mask.to(device, non_blocking=True)
             # mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
@@ -203,8 +205,7 @@ def train_func(mydict):
             seg_onehot = onehotmatrix[lut[label.long()]]
             seg_onehot = seg_onehot.permute(0, 4, 1, 2, 3)
 
-            # test dataloader_aug_cc.py
-            # import nibabel as nib
+            # # test dataloader_aug_cc.py
             # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
             # new_image.to_filename('samples/aug_image.nii.gz')
 
@@ -226,7 +227,21 @@ def train_func(mydict):
                 y_pred = network(x)
                 for i in range(x.shape[0]):
                     channels_to_select = [0, 1, 2, 6, 7]
-                    DEFaff[i], DEFaffseg[i] = least_square_fitting(x[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
+                    # DEFaff[i,:], DEFaffseg[i,:] = least_square_fitting(x_native[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
+                    _, seg = least_square_fitting(x[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
+                    deform_new_seg = nib.Nifti1Image(seg[0,:].cpu().detach().numpy(), affine=affine[0].cpu().detach().numpy())
+                    deform_new_seg.to_filename('samples/deform_aug_seg.nii.gz')
+                    import pdb; pdb.set_trace()
+
+
+                # deform_label = np.squeeze(DEFaffseg)
+                # deform_seg_onehot = onehotmatrix[lut[deform_label.long()]]
+                # deform_seg_onehot = deform_seg_onehot.permute(0, 4, 1, 2, 3)
+
+                # deform_discrete_labels = torch.unsqueeze(torch.argmax(deform_seg_onehot, dim=1), dim=1).to(dtype=torch.int)
+                # deform_new_seg = nib.Nifti1Image(deform_discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+                # deform_new_seg.to_filename('samples/deform_aug_seg.nii.gz')
+                import pdb; pdb.set_trace()
 
                 seg_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
 

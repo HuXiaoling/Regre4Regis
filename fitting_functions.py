@@ -58,6 +58,20 @@ def least_square_fitting(im, pred):
     jj2aff = B @ fit_y
     kk2aff = B @ fit_z
 
+    # nonlinear fitting part (Demons, draft by Eugenio)
+    if False:
+        ii_res = ii - ii2aff
+        jj_res = jj - jj2aff
+        kk_res = kk - kk2aff
+        ii_nonlin = gaussian_filter_torch(torch.clip(ii_res, min=-clipval, max=clipval), sigma=sigma, device='cuda')
+        jj_nonlin = gaussian_filter_torch(torch.clip(jj_res, min=-clipval, max=clipval), sigma=sigma, device='cuda')
+        kk_nonlin = gaussian_filter_torch(torch.clip(kk_res, min=-clipval, max=clipval), sigma=sigma, device='cuda')
+        ii2aff += ii_nonlin
+        jj2aff += jj_nonlin
+        kk2aff += kk_nonlin
+    
+    # deformation
+
     valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
     DEFaff = torch.zeros_like(pred_mni[..., 0])
     DEFaff[M] = valsAff
@@ -76,20 +90,27 @@ if __name__ == "__main__":
     # aff = torch.tensor(aff, device='cuda', dtype=torch.float64)
 
     training_set = regress('data_lists/regress/train_list.csv', 'data/', is_training=True)
-    trainloader = data.DataLoader(training_set,batch_size=1,shuffle=True, drop_last=True) 
+    trainloader = data.DataLoader(training_set,batch_size=1,shuffle=True, drop_last=True, pin_memory=False) 
 
     batch = next(iter(trainloader))
     im, mask, target, seg, aff = batch
-    im = im[0,:].to('cuda')
+
+    ori_image = nib.Nifti1Image(im[0,0,:,:,:].cpu().detach().numpy(), affine=aff[0])
+    ori_image.to_filename('samples/ori_image.nii.gz')
+
+    ori_seg = nib.Nifti1Image(seg[0,0,:,:,:].cpu().detach().numpy(), affine=aff[0])
+    ori_seg.to_filename('samples/ori_seg.nii.gz')
+
+    # im = im[0,:].to('cuda')
     aff = aff[0,:]
 
     model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to('cuda')
     model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
-    pred = model(im[None, ...].to(dtype=torch.float)) 
+    pred = model(im.to('cuda').to(dtype=torch.float)) 
     channels_to_select = [0, 1, 2, 6, 7]
-    pred = pred[0, channels_to_select, :, :]
-    
-    DEFaff, DEFaffseg = least_square_fitting(im, pred)
+    # pred = pred[0, channels_to_select, :, :]
+    import pdb; pdb.set_trace()
+    DEFaff, DEFaffseg = least_square_fitting(im[0,:].to('cuda'), pred[0, channels_to_select, :])
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 

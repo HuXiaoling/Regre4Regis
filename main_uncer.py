@@ -3,6 +3,7 @@
 # lr schedule
 import torch
 import numpy as np
+import nibabel as nib
 
 import argparse, json
 import os, glob, sys
@@ -184,7 +185,6 @@ def train_func(mydict):
             mask = mask.type(torch.cuda.FloatTensor)
 
             # test dataloader_aug_cc.py
-            # import nibabel as nib
             # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
             # new_image.to_filename('samples/aug_image.nii.gz')
 
@@ -203,10 +203,10 @@ def train_func(mydict):
 
                 if mydict['mode'] == 'pre': 
                     if mydict['regress_loss'] == 'l1':
-                        print("We are using L1 loss for regression!")
+                        print("We are using L1 loss for regression with three channels!")
                         regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
                     else:
-                        print("We are using L2 loss for regression!")
+                        print("We are using L2 loss for regression with three channels!")
                         regress_loss = l2_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
 
                     train_loss = regress_loss + mydict['loss_weight'] * seg_loss
