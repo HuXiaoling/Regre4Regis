@@ -1,12 +1,12 @@
-# Regression for registration
+## Regression for registration and the uncertainty
 
-Pre-training experimental results:
+### Pre-training experimental results without uncertainty branch
 
 | Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 |   5 channels  | 1 (0.0147)    | 0.5 (-0.7352) | ---   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-Pre-training experimental results:
+### Pre-training experimental results by using l2 regression loss
 
 | Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -19,20 +19,7 @@ Pre-training experimental results:
 | 6 channels    | 1 (0.0235)    | 0.1  (-0.7237)    | --- (1.1944)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.0298)    | 0.5  (-0.7256)    | --- (1.4838)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-Finetune experimental results (loss weight = 0.5):
-
-| Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
-| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1 (0.1105)    | 0.5 (-0.7242) | Gaussian  0.1 (0.2017)    | &check;   | &check;   | &check;   | &cross;   | No    |
-| 8 channels    | 1 (0.1093)    | 0.5 (-0.7235) | Gaussian  0.5 (0.1888)    | &check;   | &check;   | &check;   | &cross;   | No    |
-| 8 channels    | 1 (0.0283)    | 0.5 (-0.7141) | Laplacian 0.1 (1.1182)    | &check;   | &check;   | &check;   | &check;   | Yes   |
-| 8 channels    | 1 (0.0291)    | 0.5 (-0.7119) | Laplacian 0.5 (1.4062)    | &check;   | &check;   | &check;   | &check;   | Yes   |
-| 6 channels    | 1 (0.0382)    | 0.5 (-0.7295) | Gaussian  0.1 (0.0940)    | &check;   | &check;   | &check;   | &check;   | Yes   |
-| 6 channels    | 1 (0.0344)    | 0.5 (-0.7228) | Gaussian  0.5 (0.0740)    | &check;   | &check;   | &check;   | &check;   | Yes   |
-| 6 channels    | 1 (0.0322)    | 0.5 (-0.7291) | Laplacian 0.1 (0.6011)    | &check;   | &check;   | &check;   | &check;   | Yes   |
-| 6 channels    | 1 (0.0348)    | 0.5 (-0.7239) | Laplacian 0.5 (0.6633)    | &check;   | &check;   | &check;   | &check;   | Yes   |
-
-Finetune experimental results (loss weight = 0.5) by increasing uncertainty loss weight:
+### Finetune experimental results ($\lambda_{seg} = 0.5$)
 
 | Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -51,7 +38,7 @@ Finetune experimental results (loss weight = 0.5) by increasing uncertainty loss
 | 6 channels    | 1 (0.0246)    | 0.5 (-0.7174) | Laplacian 0.1  (0.9362)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.0243)    | 0.5 (-0.6252) | Laplacian 0.5  (0.9320)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss weight:
+### Finetune experimental results ($\lambda_{seg} = 0.1$)
 
 | Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -72,7 +59,7 @@ Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss
 | 6 channels    | 1 (0.0308)    | 0.1 (-0.6987) | Laplacian 0.1  (1.2880)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.1255)    | 0.1 (-0.7056) | Laplacian 0.5  (5.1822)   |           |           |           |           | No    |
 
-Finetune experimental results (loss weight = 0.05) by increasing uncertainty loss weight:
+### Finetune experimental results ($\lambda_{seg} = 0.05$)
 
 | Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -93,7 +80,7 @@ Finetune experimental results (loss weight = 0.05) by increasing uncertainty los
 | 6 channels    | 1 (0.2083)    | 0.05 (-0.6752)    | Laplacian 0.1  (6.7715)   |           |           |           |           | No    |
 | 6 channels    | 1 (0.0261)    | 0.05 (-0.6091)    | Laplacian 0.5  (1.7034)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-Finetune experimental results (loss weight = 0.01) by increasing uncertainty loss weight:
+### Finetune experimental results ($\lambda_{seg} = 0.01$)
 
 | Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -114,8 +101,7 @@ Finetune experimental results (loss weight = 0.01) by increasing uncertainty los
 | 6 channels    | 1 (0.1205)    | 0.01 (-0.6810)    | Laplacian 0.1  (4.2078)   |           |           |           |           | No    |
 | 6 channels    | 1 (0.1129)    | 0.01 (-0.5902)    | Laplacian 0.5  (5.1991)   |           |           |           |           | No    |
 
-
-Pre-training experimental results:
+### Pre-training experimental results by using l1 regression loss
 
 | Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -128,7 +114,7 @@ Pre-training experimental results:
 | 6 channels    | 1 (0.0156)    | 0.1  (-0.7227)    | --- (0.6635)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.0276)    | 0.5  (-0.7320)    | --- (2.0480)  | &check;   | &check;   | &check;   | &check;   | yes   |
 
-Finetune experimental results (loss weight = 0.5) by increasing uncertainty loss weight:
+### Finetune experimental results ($\lambda_{seg} = 0.5$)
 
 | Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -141,7 +127,7 @@ Finetune experimental results (loss weight = 0.5) by increasing uncertainty loss
 | 6 channels    | 1             | 0.5           | Laplacian 0.1             |           |           |           |           | Running   |
 | 6 channels    | 1             | 0.5           | Laplacian 0.5             |           |           |           |           | Running   |
 
-Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss weight:
+### Finetune experimental results ($\lambda_{seg} = 0.1$)
 
 | Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -154,7 +140,7 @@ Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss
 | 6 channels    | 1             | 0.1           | Laplacian 0.1             |           |           |           |           |           |
 | 6 channels    | 1             | 0.1           | Laplacian 0.5             |           |           |           |           |           |
 
-Finetune experimental results (loss weight = 0.01) by increasing uncertainty loss weight:
+### Finetune experimental results ($\lambda_{seg} = 0.01$)
 
 | Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
