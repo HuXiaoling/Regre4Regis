@@ -130,7 +130,7 @@ Pre-training experimental results:
 
 Finetune experimental results (loss weight = 0.5) by increasing uncertainty loss weight:
 
-| Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
+| Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 6 channels    | 1             | 0.5           | Gaussian  0.01            |           |           |           |           | Running   |
 | 6 channels    | 1             | 0.5           | Gaussian  0.05            |           |           |           |           | Running   |
@@ -143,7 +143,7 @@ Finetune experimental results (loss weight = 0.5) by increasing uncertainty loss
 
 Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss weight:
 
-| Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
+| Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 6 channels    | 1             | 0.1           | Gaussian  0.01            |           |           |           |           | Running   |
 | 6 channels    | 1             | 0.1           | Gaussian  0.05            |           |           |           |           | Running   |
@@ -156,7 +156,7 @@ Finetune experimental results (loss weight = 0.1) by increasing uncertainty loss
 
 Finetune experimental results (loss weight = 0.01) by increasing uncertainty loss weight:
 
-| Setting | regress loss weight (l2) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
+| Setting | regress loss weight (l1) | seg loss weight | uncer loss weight | seg|  x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1             | 0.01          | Gaussian  0.01            |           |           |           |           |       |
 | 8 channels    | 1             | 0.01          | Gaussian  0.05            |           |           |           |           |       |
