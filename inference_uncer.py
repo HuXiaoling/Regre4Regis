@@ -110,10 +110,12 @@ def validation_func(mydict):
             avg_dice += sdl(y_pred[:,6:8,:], mask)
 
             regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask) / (1e-6 + torch.mean(mask))
-            seg_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
+            mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
             uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
                                           y_pred[:,4,] * mask + (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,4,])) + \
                                           y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
+            
+            print("Validation: regress_loss: {:.4f}, mask_loss: {:.4f}, uncer_loss: {:.4f}".format(regress_loss, mask_loss, uncer_loss))
             import pdb; pdb.set_trace()
 
         avg_dice = -avg_dice # because SoftDice returns negative dice

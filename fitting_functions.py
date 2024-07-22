@@ -73,14 +73,14 @@ def least_square_fitting(im, pred):
     # deformation
 
     valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
-    DEFaff = torch.zeros_like(pred_mni[..., 0])
-    DEFaff[M] = valsAff
+    DEFimg = torch.zeros_like(pred_mni[..., 0])
+    DEFimg[M] = valsAff
 
     valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'nearest', device='cuda')
-    DEFaffseg = torch.zeros_like(pred_mni[..., 0])
-    DEFaffseg[M] = valsAff_seg
+    DEFseg = torch.zeros_like(pred_mni[..., 0])
+    DEFseg[M] = valsAff_seg
 
-    return DEFaff, DEFaffseg
+    return DEFimg, DEFseg
 
 if __name__ == "__main__":
     start_time = time()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # aff = torch.tensor(aff, device='cuda', dtype=torch.float64)
 
     training_set = regress('data_lists/regress/train_list.csv', 'data/', is_training=True)
-    trainloader = data.DataLoader(training_set,batch_size=1,shuffle=True, drop_last=True, pin_memory=False) 
+    trainloader = data.DataLoader(training_set,batch_size=4,shuffle=True, drop_last=True, pin_memory=False) 
 
     batch = next(iter(trainloader))
     im, mask, target, seg, aff = batch
@@ -109,13 +109,14 @@ if __name__ == "__main__":
     pred = model(im.to('cuda').to(dtype=torch.float)) 
     channels_to_select = [0, 1, 2, 6, 7]
     # pred = pred[0, channels_to_select, :, :]
-    import pdb; pdb.set_trace()
-    DEFaff, DEFaffseg = least_square_fitting(im[0,:].to('cuda'), pred[0, channels_to_select, :])
+
+    DEFimg, DEFseg = least_square_fitting(im[0,:].to('cuda'), pred[0, channels_to_select, :])
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 
-    new_image = nib.Nifti1Image(DEFaff.cpu().detach().numpy(), affine=aff.cpu().detach().numpy())
+    new_image = nib.Nifti1Image(DEFimg.cpu().detach().numpy(), affine=aff.cpu().detach().numpy())
     new_image.to_filename('samples/fitting_img.nii.gz')
 
-    new_seg = nib.Nifti1Image(DEFaffseg.cpu().detach().numpy(), affine=aff.cpu().detach().numpy())
+    new_seg = nib.Nifti1Image(DEFseg.cpu().detach().numpy(), affine=aff.cpu().detach().numpy())
     new_seg.to_filename('samples/fitting_seg.nii.gz')
+    import pdb; pdb.set_trace()

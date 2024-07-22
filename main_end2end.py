@@ -47,8 +47,9 @@ def parse_func(args):
     mydict['regress_loss'] = params['train']['regress_loss']
     mydict['uncer'] = params['train']['uncer']
     mydict['output_folder'] = params['train']['output_folder']
-    mydict['loss_weight'] = params['train']['loss_weight']
+    mydict['loss_weight_mask'] = params['train']['loss_weight_mask']
     mydict['loss_weight_uncer'] = params['train']['loss_weight_uncer']
+    mydict['loss_weight_seg'] = params['train']['loss_weight_seg']
     mydict['num_workers'] = params['train']['num_workers']
     mydict['train_batch_size'] = int(params['train']['train_batch_size'])
     mydict['validation_batch_size'] = int(params['train']['validation_batch_size'])
@@ -83,12 +84,12 @@ def train_func(mydict):
     if mydict['dataset'] == 'regress':
         training_set = regress(mydict['train_datalist'], mydict['files'], is_training= True)
         training_generator = torch.utils.data.DataLoader(training_set,batch_size=mydict['train_batch_size'],\
-                                                         shuffle=True, drop_last=True, num_workers=mydict['num_workers'], pin_memory=False)
+                                                         shuffle=True, drop_last=True, num_workers=mydict['num_workers'], pin_memory=True)
 
         # Validation Data
         validation_set = regress(mydict['validation_datalist'], mydict['files'])
         validation_generator = torch.utils.data.DataLoader(validation_set,batch_size=mydict['validation_batch_size'],\
-                                                           shuffle=False, drop_last=False, num_workers=mydict['num_workers'], pin_memory=False)
+                                                           shuffle=False, drop_last=False, num_workers=mydict['num_workers'], pin_memory=True)
     else:
         print ('Wrong dataloader!')
 
@@ -128,8 +129,9 @@ def train_func(mydict):
     p['mode'] = mydict['mode']
     p['regress_loss'] = mydict['regress_loss']
     p['uncer'] = mydict['uncer']
-    p['loss_weight_seg'] = mydict['loss_weight']
+    p['loss_weight_mask'] = mydict['loss_weight_mask']
     p['loss_weight_uncer'] = mydict['loss_weight_uncer']
+    p['loss_weight_seg'] = mydict['loss_weight_seg']
     p['num_workers'] = mydict['num_workers']
     p['learning_rate'] = mydict['learning_rate']
     p['epochs'] = mydict['num_epochs']
@@ -165,7 +167,7 @@ def train_func(mydict):
             x, mask, y_gt, seg, affine = next(training_iterator)
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
-            x_native = x
+            # x_native = x.clone()
             mask = mask.to(device, non_blocking=True)
             # mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
@@ -187,11 +189,12 @@ def train_func(mydict):
             x, mask, y_gt, seg = transform_spatial(x, mask, y_gt, seg)
             mask = mask.type(torch.cuda.FloatTensor)
             seg = seg.type(torch.cuda.FloatTensor) 
+            seg[seg == 24] = 0
 
             # one hot encoding
-            label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 
-                            2, 3, 4, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
-                            41, 42, 43, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
+            label_list_segmentation = [0, 14, 15, 16,
+                            2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
+                            41, 42, 43, 44, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
 
             n_labels = len(label_list_segmentation)
 
@@ -201,7 +204,7 @@ def train_func(mydict):
                 lut[label_list_segmentation[l]] = l
 
             onehotmatrix = torch.eye(n_labels, dtype=torch.float64, device=device)
-            label = np.squeeze(seg)
+            label = seg[:,0,:]
             seg_onehot = onehotmatrix[lut[label.long()]]
             seg_onehot = seg_onehot.permute(0, 4, 1, 2, 3)
 
@@ -221,29 +224,28 @@ def train_func(mydict):
             # new_seg = nib.Nifti1Image(discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
             # new_seg.to_filename('samples/aug_seg.nii.gz')
 
-            DEFaff = torch.empty_like(x)
-            DEFaffseg = torch.empty_like(mask)
+            DEFimg = torch.empty_like(x)
+            DEFseg = torch.empty_like(mask)
             with torch.autocast(device_type='cuda', dtype=torch.float16):
                 y_pred = network(x)
                 for i in range(x.shape[0]):
                     channels_to_select = [0, 1, 2, 6, 7]
-                    # DEFaff[i,:], DEFaffseg[i,:] = least_square_fitting(x_native[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
-                    _, seg = least_square_fitting(x[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
-                    deform_new_seg = nib.Nifti1Image(seg[0,:].cpu().detach().numpy(), affine=affine[0].cpu().detach().numpy())
-                    deform_new_seg.to_filename('samples/deform_aug_seg.nii.gz')
-                    import pdb; pdb.set_trace()
+                    DEFimg[i,0,:], DEFseg[i,0,:] = least_square_fitting(x[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
+                    
+                    # deform_new_seg = nib.Nifti1Image(DEFseg[i,0,:].cpu().detach().numpy(), affine=affine[0].cpu().detach().numpy())
+                    # deform_new_seg.to_filename('samples/deform_aug_seg.nii.gz')
+                    # import pdb; pdb.set_trace()
 
-
-                # deform_label = np.squeeze(DEFaffseg)
-                # deform_seg_onehot = onehotmatrix[lut[deform_label.long()]]
-                # deform_seg_onehot = deform_seg_onehot.permute(0, 4, 1, 2, 3)
+                deform_label = DEFseg[:,0,:]
+                deform_seg_onehot = onehotmatrix[lut[deform_label.long()]]
+                deform_seg_onehot = deform_seg_onehot.permute(0, 4, 1, 2, 3)
 
                 # deform_discrete_labels = torch.unsqueeze(torch.argmax(deform_seg_onehot, dim=1), dim=1).to(dtype=torch.int)
                 # deform_new_seg = nib.Nifti1Image(deform_discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
                 # deform_new_seg.to_filename('samples/deform_aug_seg.nii.gz')
-                import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
 
-                seg_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
 
                 if mydict['mode'] == 'pre': 
                     if mydict['regress_loss'] == 'l1':
@@ -253,7 +255,7 @@ def train_func(mydict):
                         print("We are using L2 loss for regression!")
                         regress_loss = l2_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
 
-                    train_loss = regress_loss + mydict['loss_weight'] * seg_loss
+                    train_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
                 else:
                     if mydict['uncer'] == 'gaussian':
                         print("We are using Gaussian distribution to model uncertainty for three sigmas!")
@@ -261,8 +263,10 @@ def train_func(mydict):
                         uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
                                                       y_pred[:,4,] * mask + (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,4,])) + \
                                                       y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
+                        
+                        seg_loss = sdl(seg_onehot, deform_seg_onehot)
 
-                        train_loss = mydict['loss_weight'] * seg_loss + mydict['loss_weight_uncer'] * uncer_loss
+                        train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
                     else:
                         print("We are using Laplacian distribution to model uncertainty for three sigmas!")
@@ -271,7 +275,9 @@ def train_func(mydict):
                                                 y_pred[:,4,] * mask + l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,4,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,4,]))) + \
                                                 y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
 
-                        train_loss = mydict['loss_weight'] * seg_loss + mydict['loss_weight_uncer'] * uncer_loss
+                        seg_loss = sdl(seg_onehot, deform_seg_onehot)
+
+                        train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
                 if torch.isnan(train_loss):
                     print("NaN detected in training loss. Exiting...")
@@ -298,7 +304,7 @@ def train_func(mydict):
                 network.eval()
                 validation_iterator = iter(validation_generator)
                 avg_val_loss = 1000.0
-                seg_dice = 0.0
+                mask_dice = 0.0
                 for validation_step in range(len(validation_generator)):
                     print("Validation Step {}.".format(validation_step))
                     x, mask, y_gt, seg, affine = next(validation_iterator)
@@ -312,7 +318,7 @@ def train_func(mydict):
                     y_pred = network(x)
                     
                     regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
-                    seg_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                    mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
 
                     if mydict['uncer'] == 'gaussian':
                         uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
@@ -325,20 +331,20 @@ def train_func(mydict):
                                                 y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
 
                     if mydict['mode'] == 'pre':
-                        val_loss = regress_loss + mydict['loss_weight'] * seg_loss
+                        val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
                     else:
-                        val_loss = regress_loss + mydict['loss_weight'] * seg_loss + mydict['loss_weight_uncer'] * uncer_loss
+                        val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
                     
                     avg_val_loss += val_loss
-                    seg_dice += sdl(y_pred[:,6:8,:], mask)
-                seg_dice = -seg_dice # because SoftDice returns negative dice
-                seg_dice /= len(validation_generator)
+                    mask_dice += sdl(y_pred[:,6:8,:], mask)
+                mask_dice = -mask_dice # because SoftDice returns negative dice
+                mask_dice /= len(validation_generator)
                 avg_val_loss /= len(validation_generator)
             validation_end_time = time()
             writer.add_scalar('Loss/val', avg_val_loss, epoch)
-            writer.add_scalar('Dice/val', seg_dice, epoch)
+            writer.add_scalar('Dice/val', mask_dice, epoch)
             print("End of epoch validation took {} seconds.\nAverage validation loss: {}.\nAverage dice: {}"
-                  .format(validation_end_time - validation_start_time, avg_val_loss, seg_dice))
+                  .format(validation_end_time - validation_start_time, avg_val_loss, mask_dice))
 
             # check for best epoch and save it if it is and print
             if epoch == 0:
@@ -350,7 +356,7 @@ def train_func(mydict):
                     best_dict['epoch'] = epoch
             if epoch == best_dict['epoch']:
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
-                # torch.save({'epoch': epoch, 'dice': seg_dice, 'model_state_dict': network.state_dict(),}, 
+                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_best.pth"))
             print("Best epoch so far: {}\n".format(best_dict))
 
@@ -358,9 +364,9 @@ def train_func(mydict):
             if epoch % mydict['save_every'] == 0:
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_last.pth"))
-                # torch.save({'epoch': epoch, 'dice': seg_dice, 'model_state_dict': network.state_dict(),}, 
+                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
-                # torch.save({'epoch': epoch, 'dice': seg_dice, 'model_state_dict': network.state_dict(),}, 
+                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_last.pth"))
 
 if __name__ == "__main__":

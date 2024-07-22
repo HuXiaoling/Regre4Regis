@@ -46,7 +46,7 @@ def parse_func(args):
     mydict['regress_loss'] = params['train']['regress_loss']
     mydict['uncer'] = params['train']['uncer']
     mydict['output_folder'] = params['train']['output_folder']
-    mydict['loss_weight'] = params['train']['loss_weight']
+    mydict['loss_weight_mask'] = params['train']['loss_weight_mask']
     mydict['loss_weight_uncer'] = params['train']['loss_weight_uncer']
     mydict['num_workers'] = params['train']['num_workers']
     mydict['train_batch_size'] = int(params['train']['train_batch_size'])
@@ -127,7 +127,7 @@ def train_func(mydict):
     p['mode'] = mydict['mode']
     p['regress_loss'] = mydict['regress_loss']
     p['uncer'] = mydict['uncer']
-    p['loss_weight_seg'] = mydict['loss_weight']
+    p['loss_weight_mask'] = mydict['loss_weight_mask']
     p['loss_weight_uncer'] = mydict['loss_weight_uncer']
     p['num_workers'] = mydict['num_workers']
     p['learning_rate'] = mydict['learning_rate']
@@ -199,7 +199,7 @@ def train_func(mydict):
             with torch.autocast(device_type='cuda', dtype=torch.float16):
                 y_pred = network(x)
 
-                seg_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                mask_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
 
                 if mydict['mode'] == 'pre': 
                     if mydict['regress_loss'] == 'l1':
@@ -209,7 +209,7 @@ def train_func(mydict):
                         print("We are using L2 loss for regression with single channel!")
                         regress_loss = l2_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
 
-                    train_loss = regress_loss + mydict['loss_weight'] * seg_loss
+                    train_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
                 else:
                     if mydict['uncer'] == 'gaussian':
                         print("We are using Gaussian distribution to model uncertainty for single sigma!")
@@ -218,7 +218,7 @@ def train_func(mydict):
                                                                             (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
                                                                             (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,]))) / (1e-6 + torch.mean(mask))
 
-                        train_loss = mydict['loss_weight'] * seg_loss + mydict['loss_weight_uncer'] * uncer_loss
+                        train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss
 
                     else:
                         print("We are using Laplacian distribution to model uncertainty for single sigma!")
@@ -227,7 +227,7 @@ def train_func(mydict):
                                                                       l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
                                                                       l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,3,])))) / (1e-6 + torch.mean(mask))
 
-                        train_loss = mydict['loss_weight'] * seg_loss + mydict['loss_weight_uncer'] * uncer_loss
+                        train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss
 
                 if torch.isnan(train_loss):
                     print("NaN detected in training loss. Exiting...")
@@ -254,7 +254,7 @@ def train_func(mydict):
                 network.eval()
                 validation_iterator = iter(validation_generator)
                 avg_val_loss = 1000.0
-                seg_dice = 0.0
+                mask_dice = 0.0
                 for validation_step in range(len(validation_generator)):
                     print("Validation Step {}.".format(validation_step))
                     x, mask, y_gt, seg, affine = next(validation_iterator)
@@ -268,7 +268,7 @@ def train_func(mydict):
                     y_pred = network(x)
                     
                     regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
-                    seg_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                    mask_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
 
                     if mydict['uncer'] == 'gaussian':
                         uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
@@ -281,20 +281,20 @@ def train_func(mydict):
                                                                       l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,3,])))) / (1e-6 + torch.mean(mask))
 
                     if mydict['mode'] == 'pre':
-                        val_loss = regress_loss + mydict['loss_weight'] * seg_loss
+                        val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
                     else:
-                        val_loss = regress_loss + mydict['loss_weight'] * seg_loss + mydict['loss_weight_uncer'] * uncer_loss
+                        val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss
                     
                     avg_val_loss += val_loss
-                    seg_dice += sdl(y_pred[:,4:6,:], mask)
-                seg_dice = -seg_dice # because SoftDice returns negative dice
-                seg_dice /= len(validation_generator)
+                    mask_dice += sdl(y_pred[:,4:6,:], mask)
+                mask_dice = -mask_dice # because SoftDice returns negative dice
+                mask_dice /= len(validation_generator)
                 avg_val_loss /= len(validation_generator)
             validation_end_time = time()
             writer.add_scalar('Loss/val', avg_val_loss, epoch)
-            writer.add_scalar('Dice/val', seg_dice, epoch)
+            writer.add_scalar('Dice/val', mask_dice, epoch)
             print("End of epoch validation took {} seconds.\nAverage validation loss: {}.\nAverage dice: {}"
-                  .format(validation_end_time - validation_start_time, avg_val_loss, seg_dice))
+                  .format(validation_end_time - validation_start_time, avg_val_loss, mask_dice))
 
             # check for best epoch and save it if it is and print
             if epoch == 0:
@@ -306,7 +306,7 @@ def train_func(mydict):
                     best_dict['epoch'] = epoch
             if epoch == best_dict['epoch']:
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
-                # torch.save({'epoch': epoch, 'dice': seg_dice, 'model_state_dict': network.state_dict(),}, 
+                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_best.pth"))
             print("Best epoch so far: {}\n".format(best_dict))
 
@@ -314,9 +314,9 @@ def train_func(mydict):
             if epoch % mydict['save_every'] == 0:
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_last.pth"))
-                # torch.save({'epoch': epoch, 'dice': seg_dice, 'model_state_dict': network.state_dict(),}, 
+                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
-                # torch.save({'epoch': epoch, 'dice': seg_dice, 'model_state_dict': network.state_dict(),}, 
+                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_last.pth"))
 
 if __name__ == "__main__":

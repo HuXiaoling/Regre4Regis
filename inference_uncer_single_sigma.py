@@ -95,26 +95,28 @@ def validation_func(mydict):
             pre_coor = pre_coor * 100
 
             pre_coor_nii = nib.Nifti1Image(pre_coor.cpu().detach().numpy(), affine=affine[0])
-            pre_coor_nii.to_filename('samples/414456_coor_pred.nii.gz')
+            pre_coor_nii.to_filename('samples/coor_pred.nii.gz')
 
             pre_sigma = torch.exp(y_pred[:,3,][0])
             pre_sigma_nii = nib.Nifti1Image(torch.exp(pre_sigma).cpu().detach().numpy(), affine=affine[0])
-            pre_sigma_nii.to_filename('samples/414456_sigma_pred.nii.gz')
+            pre_sigma_nii.to_filename('samples/sigma_pred.nii.gz')
 
             y_pred_binary = softmax_helper(y_pred[:,4:6,:])
             y_pred_binary = torch.argmax(y_pred[:,4:6,:], dim=1)
             y_pred_binary_nii = nib.Nifti1Image(y_pred_binary[0].to(torch.float).cpu().detach().numpy(), affine=affine[0])
-            y_pred_binary_nii.to_filename('samples/414456_mask_pred.nii.gz')
+            y_pred_binary_nii.to_filename('samples/mask_pred.nii.gz')
 
             avg_dice += sdl(y_pred[:,4:6,:], mask)
 
             regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask) / (1e-6 + torch.mean(mask))
-            seg_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
+            mask_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
             uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
                                                                 (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
                                                                 (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,]))) / (1e-6 + torch.mean(mask))
-
+            
+            print("Validation: regress_loss: {:.4f}, mask_loss: {:.4f}, uncer_loss: {:.4f}".format(regress_loss, mask_loss, uncer_loss))
             import pdb; pdb.set_trace()
+
         avg_dice = -avg_dice # because SoftDice returns negative dice
         avg_dice /= len(validation_generator)
     validation_end_time = time()

@@ -32,7 +32,7 @@ def parse_func(args):
     mydict['train_datalist'] = params['train']['train_datalist']
     mydict['validation_datalist'] = params['train']['validation_datalist']
     mydict['output_folder'] = params['train']['output_folder']
-    mydict['loss_weight'] = params['train']['loss_weight']
+    mydict['loss_weight_mask'] = params['train']['loss_weight_mask']
     mydict['loss_weight_uncer'] = params['train']['loss_weight_uncer']
     mydict['train_batch_size'] = int(params['train']['train_batch_size'])
     mydict['validation_batch_size'] = int(params['train']['validation_batch_size'])
@@ -106,7 +106,7 @@ def train_func(mydict):
     logfile = os.path.join(mydict['output_folder'], 'parameters.txt')
     log_file = open(logfile, 'w')
     p = OrderedDict()
-    p['loss_weight_seg'] = mydict['loss_weight']
+    p['loss_weight_mask'] = mydict['loss_weight_mask']
     p['loss_weight_uncer'] = mydict['loss_weight_uncer']
     p['learning_rate'] = mydict['learning_rate']
     p['epochs'] = mydict['num_epochs']
@@ -120,7 +120,7 @@ def train_func(mydict):
     # Train loop
     best_dict = {}
     best_dict['epoch'] = 0
-    best_dict['seg_dice'] = 1000.0
+    best_dict['mask_dice'] = 1000.0
     print("Let the training begin!")
 
     num_batches = len(training_generator)
@@ -152,7 +152,7 @@ def train_func(mydict):
             # regress_loss = l1_loss(y_pred[:,0:3,][mask], y_gt[mask]) # make mask logic
 
             train_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask) / (1e-6 + torch.mean(mask)) +\
-                mydict['loss_weight']* (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
+                mydict['loss_weight_mask']* (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
             avg_train_loss += train_loss
 
             train_loss.backward()
@@ -168,7 +168,7 @@ def train_func(mydict):
                 network.eval()
                 validation_iterator = iter(validation_generator)
                 avg_val_loss = 0.0
-                seg_dice = 0.0
+                mask_dice = 0.0
                 for validation_step in range(len(validation_generator)):
                     print("Validation Step {}.".format(validation_step))
                     x, mask, y_gt, _ = next(validation_iterator)
@@ -182,11 +182,11 @@ def train_func(mydict):
                     y_pred = network(x)
 
                     val_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask)/ (1e-6 + torch.mean(mask)) +\
-                          mydict['loss_weight']* (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
+                          mydict['loss_weight_mask']* (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
                     avg_val_loss += val_loss
-                    seg_dice += sdl(y_pred[:,3:5,:], mask)
-                seg_dice = -seg_dice # because SoftDice returns negative dice
-                seg_dice /= len(validation_generator)
+                    mask_dice += sdl(y_pred[:,3:5,:], mask)
+                mask_dice = -mask_dice # because SoftDice returns negative dice
+                mask_dice /= len(validation_generator)
                 avg_val_loss /= len(validation_generator)
             validation_end_time = time()
             print("End of epoch validation took {} seconds.\nAverage validation loss: {}".format(validation_end_time - validation_start_time, avg_val_loss))
@@ -194,10 +194,10 @@ def train_func(mydict):
             # check for best epoch and save it if it is and print
             if epoch == 0:
                 best_dict['epoch'] = epoch
-                best_dict['seg_dice'] = seg_dice
+                best_dict['mask_dice'] = mask_dice
             else:
-                if best_dict['seg_dice'] < seg_dice:
-                    best_dict['seg_dice'] = seg_dice
+                if best_dict['mask_dice'] < mask_dice:
+                    best_dict['mask_dice'] = mask_dice
                     best_dict['epoch'] = epoch
             if epoch == best_dict['epoch']:
                 torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))

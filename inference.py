@@ -105,7 +105,7 @@ def validation_func(mydict):
             avg_dice += sdl(y_pred[:,3:5,:], mask)
 
             regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt*mask)/ (1e-6 + torch.mean(mask))
-            seg_loss = (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
+            mask_loss = (0.75 * sdl(y_pred[:,3:5,:], mask) + 0.25 * ce_loss(y_pred[:,3:5,:], mask[:,0,:].type(torch.LongTensor).to(device)))
             import pdb; pdb.set_trace()
             
             # for j in range(x.shape[4]):
