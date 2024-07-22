@@ -169,26 +169,27 @@ def train_func(mydict):
             x = x.type(torch.cuda.FloatTensor)
             # x_native = x.clone()
             mask = mask.to(device, non_blocking=True)
-            mask = mask.type(torch.cuda.FloatTensor) # make mask logic
+            # mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
             y_gt = y_gt.type(torch.cuda.FloatTensor)
             seg = seg.to(device, non_blocking=True)
 
             # Data Augmentation
-            # transform_intensity = cc.ctx.batch(SequentialTransform([
-            #     cc.ctx.maybe(RandomSmoothTransform(include=x), 0.5, shared=True),
-            #     cc.ctx.maybe(RandomMulFieldTransform(include=x, order=1), 0.5, shared=True),
-            #     cc.ctx.maybe(RandomGaussianNoiseTransform(include=x), 0.5, shared=True),
-            # ]))
+            transform_intensity = cc.ctx.batch(SequentialTransform([
+                cc.ctx.maybe(RandomSmoothTransform(include=x), 0.5, shared=True),
+                cc.ctx.maybe(RandomMulFieldTransform(include=x, order=1), 0.5, shared=True),
+                cc.ctx.maybe(RandomGaussianNoiseTransform(include=x), 0.5, shared=True),
+            ]))
 
-            # transform_spatial = cc.ctx.batch(SequentialTransform([
-            #     cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
-            # ]))
+            transform_spatial = cc.ctx.batch(SequentialTransform([
+                cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
+            ]))
 
-            # x = transform_intensity(x)
-            # x, mask, y_gt, seg = transform_spatial(x, mask, y_gt, seg)
-            # mask = mask.type(torch.cuda.FloatTensor)
-            # seg = seg.type(torch.cuda.FloatTensor) 
+            x = transform_intensity(x)
+            x, mask, y_gt, seg = transform_spatial(x, mask, y_gt, seg)
+            mask = mask.type(torch.cuda.FloatTensor)
+            seg = seg.type(torch.cuda.FloatTensor) 
+            seg[seg == 24] = 0
 
             # one hot encoding
             label_list_segmentation = [0, 14, 15, 16,
@@ -201,11 +202,11 @@ def train_func(mydict):
             lut = torch.zeros(10000, dtype=torch.long, device=device)
             for l in range(n_labels):
                 lut[label_list_segmentation[l]] = l
-            onehotmatrix = torch.eye(n_labels, dtype=torch.float16, device=device)
 
-            # label = seg[:,0,:]
-            # seg_onehot = onehotmatrix[lut[label.long()]]
-            # seg_onehot = seg_onehot.permute(0, 4, 1, 2, 3)
+            onehotmatrix = torch.eye(n_labels, dtype=torch.float16, device=device)
+            label = seg[:,0,:]
+            seg_onehot = onehotmatrix[lut[label.long()]]
+            seg_onehot = seg_onehot.permute(0, 4, 1, 2, 3)
 
             # # test dataloader_aug_cc.py
             # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
@@ -219,7 +220,7 @@ def train_func(mydict):
             # new_target = nib.Nifti1Image(y_gt.cpu().detach().numpy(), affine=affine[0])
             # new_target.to_filename('samples/aug_target.nii.gz')
 
-            # discrete_labels = torch.unsqueeze(torch.argmax(seg, dim=1), dim=1).to(dtype=torch.int)
+            # discrete_labels = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int)
             # new_seg = nib.Nifti1Image(discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
             # new_seg.to_filename('samples/aug_seg.nii.gz')
 
@@ -262,8 +263,8 @@ def train_func(mydict):
                         uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
                                                       y_pred[:,4,] * mask + (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,4,])) + \
                                                       y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
-                                              
-                        seg_loss = sdl(seg, deform_seg_onehot)
+                        
+                        seg_loss = sdl(seg_onehot, deform_seg_onehot)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
@@ -274,7 +275,7 @@ def train_func(mydict):
                                                 y_pred[:,4,] * mask + l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,4,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,4,]))) + \
                                                 y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
 
-                        seg_loss = sdl(seg, deform_seg_onehot)
+                        seg_loss = sdl(seg_onehot, deform_seg_onehot)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 

@@ -85,8 +85,22 @@ class regress(data.Dataset):
         
         img = torch.from_numpy(img)
         seg = torch.from_numpy(seg)
-        seg[seg == 24] = 0
         mask = torch.from_numpy(mask)
+        
+        # label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 
+        #                            2, 3, 4, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
+        #                            41, 42, 43, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
+
+        # n_labels = len(label_list_segmentation)
+
+        # # create look up table
+        # lut = torch.zeros(10000, dtype=torch.long)
+        # for l in range(n_labels):
+        #     lut[label_list_segmentation[l]] = l
+
+        # onehotmatrix = torch.eye(n_labels, dtype=torch.float64)
+        # label = np.squeeze(seg)
+        # seg_onehot = onehotmatrix[lut[label.long()]]
         
         valid_value = img * mask
         non_zero_values = valid_value[valid_value != 0]
@@ -99,41 +113,42 @@ class regress(data.Dataset):
         torch_seg = torch.unsqueeze(seg, dim=0).to(dtype=torch.int)
         torch_gt = gt.permute(3, 0, 1, 2).to(dtype=torch.float32)
 
-        if self.is_training:
+        # if self.is_training:
 
-            transform_intensity = SequentialTransform([
-                cc.ctx.maybe(RandomSmoothTransform(include=torch_img), 1, shared=True),
-                cc.ctx.maybe(RandomMulFieldTransform(include=torch_img, order=1), 1, shared=True),
-                cc.ctx.maybe(RandomGaussianNoiseTransform(include=torch_img), 1, shared=True),
-            ])
+        #     # solution 1
+        #     transform_intensity = SequentialTransform([
+        #         cc.ctx.maybe(RandomSmoothTransform(include=torch_img), 0.5, shared=True),
+        #         cc.ctx.maybe(RandomMulFieldTransform(include=torch_img, order=1), 0.5, shared=True),
+        #         cc.ctx.maybe(RandomGaussianNoiseTransform(include=torch_img), 0.5, shared=True),
+        #     ])
 
-            transform_spatial = cc.ctx.maybe(RandomAffineElasticTransform(order=1), 1, shared=True)
+        #     transform_spatial = cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True)
 
-            torch_img = transform_intensity(torch_img)
-            torch_img, torch_mask, torch_gt, torch_seg = transform_spatial(torch_img, torch_mask, torch_gt, torch_seg)
+        #     torch_img = transform_intensity(torch_img)
+        #     torch_img, torch_mask, torch_gt, torch_seg = transform_spatial(torch_img, torch_mask, torch_gt, torch_seg)
+
+
+            # solution 2
+            # transform = cc.ctx.batch(SequentialTransform([
+            #     cc.ctx.maybe(RandomSmoothTransform(include=torch_img), 0.5, shared=True),
+            #     cc.ctx.maybe(RandomMulFieldTransform(include=torch_img, order=1), 0.5, shared=True),
+            #     cc.ctx.maybe(RandomGaussianNoiseTransform(include=torch_img), 0.5, shared=True),
+            #     cc.ctx.maybe(RandomAffineElasticTransform(order=1), 0.5, shared=True),
+            # ]))
+            
+            # tmp1, tmp2, tmp3 = transform(torch_mask.unsqueeze(0), torch_img.unsqueeze(0), torch_gt.unsqueeze(0))
+            # torch_mask = tmp1.squeeze(0)
+            # torch_img = tmp2.squeeze(0)
+            # torch_gt = tmp3.squeeze(0)
 
             # torch_mask[torch_mask >= 0.5] = 1.0
             # torch_mask[torch_mask < 0.5] = 0.0
-        
-        label_list_segmentation = [0, 14, 15, 16,
-                        2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
-                        41, 42, 43, 44, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
 
-        n_labels = len(label_list_segmentation)
+            # torch_label = torch.argmax(torch_onehot, axis=0).to(dtype=torch.int)
+            # onehot_matrix = torch.eye(n_labels)[torch_label]
+            # torch_onehot = onehot_matrix.permute(3, 0, 1, 2)
 
-        # create look up table
-        lut = torch.zeros(10000, dtype=torch.long)
-        for l in range(n_labels):
-            lut[label_list_segmentation[l]] = l
-
-        onehotmatrix = torch.eye(n_labels, dtype=torch.float16)
-        label = np.squeeze(torch_seg)
-        torch_seg_onehot = onehotmatrix[lut[label]]
-        # torch_label = torch.argmax(torch_onehot, axis=0).to(dtype=torch.int)
-        # onehot_matrix = torch.eye(n_labels)[torch_label]
-        torch_seg_onehot = torch_seg_onehot.permute(3, 0, 1, 2)
-
-        return torch_img, torch_mask, torch_gt, torch_seg_onehot, affine
+        return torch_img, torch_mask, torch_gt, torch_seg, affine
 
 if __name__ == "__main__":
     start_time = time()
@@ -141,7 +156,7 @@ if __name__ == "__main__":
     trainloader = data.DataLoader(training_set,batch_size=1,shuffle=True, drop_last=True) 
 
     batch = next(iter(trainloader))
-    input, mask, target, seg_onehot, affine = batch
+    input, mask, target, seg, affine = batch
 
     # padded_input = torch.zeros(1,1,256, 256, 256)
     # padded_input[0,0,0:input.shape[2], 0:input.shape[3], 0:input.shape[4]] = input[0,0,:,:,:]
@@ -157,9 +172,7 @@ if __name__ == "__main__":
     new_target = nib.Nifti1Image(target.cpu().detach().numpy(), affine=affine[0])
     new_target.to_filename('samples/aug_target.nii.gz')
     
-    import pdb; pdb.set_trace()
-    discrete_labels = torch.argmax(seg_onehot, axis=1).to(dtype=torch.int)
-    new_seg = nib.Nifti1Image(discrete_labels[0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+    new_seg = nib.Nifti1Image(seg[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
     new_seg.to_filename('samples/aug_seg.nii.gz')
 
     end_time = time()
