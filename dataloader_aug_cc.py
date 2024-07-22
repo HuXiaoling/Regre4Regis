@@ -108,10 +108,10 @@ class regress(data.Dataset):
         img = img/median_non_zero
         gt = torch.from_numpy(gt/100)
 
-        torch_img = torch.unsqueeze(img, dim=0).to(dtype=torch.float32)
+        torch_img = torch.unsqueeze(img, dim=0).to(dtype=torch.float)
         torch_mask = torch.unsqueeze(mask, dim=0).to(dtype=torch.int)
         torch_seg = torch.unsqueeze(seg, dim=0).to(dtype=torch.int)
-        torch_gt = gt.permute(3, 0, 1, 2).to(dtype=torch.float32)
+        torch_gt = gt.permute(3, 0, 1, 2).to(dtype=torch.float)
 
         # if self.is_training:
 

@@ -166,12 +166,8 @@ def train_func(mydict):
             print("Step {}.".format(step))
             x, mask, y_gt, seg, affine = next(training_iterator)
             x = x.to(device, non_blocking=True)
-            x = x.type(torch.cuda.FloatTensor)
-            # x_native = x.clone()
             mask = mask.to(device, non_blocking=True)
-            # mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
-            y_gt = y_gt.type(torch.cuda.FloatTensor)
             seg = seg.to(device, non_blocking=True)
 
             # Data Augmentation
@@ -203,7 +199,7 @@ def train_func(mydict):
             for l in range(n_labels):
                 lut[label_list_segmentation[l]] = l
 
-            onehotmatrix = torch.eye(n_labels, dtype=torch.float16, device=device)
+            onehotmatrix = torch.eye(n_labels, dtype=torch.float, device=device)
             label = seg[:,0,:]
             seg_onehot = onehotmatrix[lut[label.long()]]
             seg_onehot = seg_onehot.permute(0, 4, 1, 2, 3)
