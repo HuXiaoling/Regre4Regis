@@ -1,17 +1,113 @@
 # fitting functions to make the framework end2end
 import os, sys
-sys.path.append('/autofs/space/durian_001/users/xh999/regre4regis/proj_supersynth_registration')
 import numpy as np
 import torch
-from SuperSynth.generators import fast_3D_interp_torch
-from SuperSynth.utils import MRIread, MRIwrite, torch_resize, align_volume_to_ref
 from scipy.interpolate import RegularGridInterpolator as rgi
 from unet.unet_3d import UNet_3d
-from scipy.ndimage import binary_fill_holes, binary_erosion
+from scipy.ndimage import binary_fill_holes
 from time import time
 import nibabel as nib
 from dataloader_aug_cc import regress
 from torch.utils import data
+
+def MRIread(filename, dtype=None, im_only=False):
+
+    assert filename.endswith(('.nii', '.nii.gz', '.mgz')), 'Unknown data file: %s' % filename
+
+    x = nib.load(filename)
+    volume = x.get_fdata()
+    aff = x.affine
+
+    if dtype is not None:
+        volume = volume.astype(dtype=dtype)
+
+    if im_only:
+        return volume
+    else:
+        return volume, aff
+
+def fast_3D_interp_torch(X, II, JJ, KK, mode, device, default_value_linear=0.0):
+    if mode=='nearest':
+        IIr = torch.round(II).long()
+        JJr = torch.round(JJ).long()
+        KKr = torch.round(KK).long()
+        IIr[IIr < 0] = 0
+        JJr[JJr < 0] = 0
+        KKr[KKr < 0] = 0
+        IIr[IIr > (X.shape[0] - 1)] = (X.shape[0] - 1)
+        JJr[JJr > (X.shape[1] - 1)] = (X.shape[1] - 1)
+        KKr[KKr > (X.shape[2] - 1)] = (X.shape[2] - 1)
+        if len(X.shape)==3:
+            X = X[..., None]
+        Y = torch.zeros([*II.shape, X.shape[3]], dtype=torch.float, device=device)
+        for channel in range(X.shape[3]):
+            aux = X[:, :, :, channel]
+            Y[...,channel] = aux[IIr, JJr, KKr]
+        if Y.shape[-1] == 1:
+            Y = Y[..., 0]
+
+    elif mode=='linear':
+        ok = (II>0) & (JJ>0) & (KK>0) & (II<=X.shape[0]-1) & (JJ<=X.shape[1]-1) & (KK<=X.shape[2]-1)
+        IIv = II[ok]
+        JJv = JJ[ok]
+        KKv = KK[ok]
+
+        fx = torch.floor(IIv).long()
+        cx = fx + 1
+        cx[cx > (X.shape[0] - 1)] = (X.shape[0] - 1)
+        wcx = IIv - fx
+        wfx = 1 - wcx
+
+        fy = torch.floor(JJv).long()
+        cy = fy + 1
+        cy[cy > (X.shape[1] - 1)] = (X.shape[1] - 1)
+        wcy = JJv - fy
+        wfy = 1 - wcy
+
+        fz = torch.floor(KKv).long()
+        cz = fz + 1
+        cz[cz > (X.shape[2] - 1)] = (X.shape[2] - 1)
+        wcz = KKv - fz
+        wfz = 1 - wcz
+
+        if len(X.shape)==3:
+            X = X[..., None]
+
+        Y = torch.zeros([*II.shape, X.shape[3]], dtype=torch.float, device=device)
+        for channel in range(X.shape[3]):
+            Xc = X[:, :, :, channel]
+
+            c000 = Xc[fx, fy, fz]
+            c100 = Xc[cx, fy, fz]
+            c010 = Xc[fx, cy, fz]
+            c110 = Xc[cx, cy, fz]
+            c001 = Xc[fx, fy, cz]
+            c101 = Xc[cx, fy, cz]
+            c011 = Xc[fx, cy, cz]
+            c111 = Xc[cx, cy, cz]
+
+            c00 = c000 * wfx + c100 * wcx
+            c01 = c001 * wfx + c101 * wcx
+            c10 = c010 * wfx + c110 * wcx
+            c11 = c011 * wfx + c111 * wcx
+
+            c0 = c00 * wfy + c10 * wcy
+            c1 = c01 * wfy + c11 * wcy
+
+            c = c0 * wfz + c1 * wcz
+
+            Yc = torch.zeros(II.shape, dtype=torch.float, device=device)
+            Yc[ok] = c.float()
+            Yc[~ok] = default_value_linear
+            Y[...,channel] = Yc
+
+        if Y.shape[-1]==1:
+            Y = Y[...,0]
+
+    else:
+        raise Exception('mode must be linear or nearest')
+
+    return Y
 
 def least_square_fitting(im, pred):
     im = torch.squeeze(im)
