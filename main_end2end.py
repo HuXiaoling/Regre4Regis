@@ -20,7 +20,7 @@ from cornucopia import (
 # from dataloader_aug import regress
 from dataloader_aug_cc import regress
 from unet.unet_3d import UNet_3d
-from utilities import SoftDiceLoss, softmax_helper
+from utilities import SoftDiceLoss, softmax_helper, dice_loss
 import torch
 import pdb
 import torch.nn as nn
@@ -260,7 +260,7 @@ def train_func(mydict):
                                                       y_pred[:,4,] * mask + (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,4,])) + \
                                                       y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
                         
-                        seg_loss = sdl(seg_onehot, deform_seg_onehot)
+                        seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
@@ -270,8 +270,8 @@ def train_func(mydict):
                         uncer_loss = torch.mean(y_pred[:,3,] * mask + l1_loss(y_pred[:,0,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,0,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
                                                 y_pred[:,4,] * mask + l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,4,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,4,]))) + \
                                                 y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
-
-                        seg_loss = sdl(seg_onehot, deform_seg_onehot)
+                        # import pdb; pdb.set_trace()
+                        seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 

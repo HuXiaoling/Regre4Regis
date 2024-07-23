@@ -71,12 +71,11 @@ def least_square_fitting(im, pred):
         kk2aff += kk_nonlin
     
     # deformation
-
     valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
     DEFimg = torch.zeros_like(pred_mni[..., 0])
     DEFimg[M] = valsAff
-
-    valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'nearest', device='cuda')
+    import pdb; pdb.set_trace()
+    valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
     DEFseg = torch.zeros_like(pred_mni[..., 0])
     DEFseg[M] = valsAff_seg
 

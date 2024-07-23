@@ -228,4 +228,12 @@ class DC_and_CE_loss(nn.Module):
             raise NotImplementedError("nah son") # reserved for other stuff (later)
         return result
 
+def dice_loss(input, target):
+    smooth = 1.
 
+    iflat = input.reshape(-1)
+    tflat = target.reshape(-1)
+    intersection = (iflat * tflat).sum()
+    
+    return 1 - ((2. * intersection + smooth) /
+              (iflat.sum() + tflat.sum() + smooth))
