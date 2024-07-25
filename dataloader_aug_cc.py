@@ -85,6 +85,7 @@ class regress(data.Dataset):
         
         img = torch.from_numpy(img)
         seg = torch.from_numpy(seg)
+        seg[seg == 24] = 0
         mask = torch.from_numpy(mask)
         
         # label_list_segmentation = [0, 14, 15, 16, 24, 77, 85, 

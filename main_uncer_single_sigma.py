@@ -99,13 +99,29 @@ def train_func(mydict):
     # Optimizer
     optimizer = torch.optim.SGD(network.parameters(), mydict['learning_rate'], weight_decay=0.00003, momentum=0.99, nesterov=True)
 
+    # Train loop
+    best_dict = {}
+    best_dict['epoch'] = 0
+    best_dict['avg_val_loss'] = 1000.0
+    print("Let the training begin!")
+
     # Load checkpoint (if specified)
     if os.path.exists(mydict['output_folder'] + '/model_best.pth'):
         print('Finetune the best model!')
-        network.load_state_dict(torch.load(mydict['output_folder'] + '/model_best.pth'), strict=True)
+        try:
+            network.load_state_dict(torch.load(mydict['output_folder'] + '/model_best.pth')['model_state_dict'], strict=True)
+            best_dict['epoch'] = torch.load(mydict['output_folder'] + '/model_best.pth')['epoch']
+            best_dict['avg_val_loss'] = torch.load(mydict['output_folder'] + '/model_best.pth')['loss']
+        except:
+            network.load_state_dict(torch.load(mydict['output_folder'] + '/model_best.pth'), strict=True)
     elif mydict['checkpoint_restore'] != "" and os.path.exists(mydict['checkpoint_restore']):
         print('Load the best baseline model!')
-        network.load_state_dict(torch.load(mydict['checkpoint_restore']), strict=True)
+        try:
+            network.load_state_dict(torch.load(mydict['checkpoint_restore'])['model_state_dict'], strict=True)
+            best_dict['epoch'] = torch.load(mydict['checkpoint_restore'])['epoch']
+            best_dict['avg_val_loss'] = torch.load(mydict['checkpoint_restore'])['loss']
+        except:
+            network.load_state_dict(torch.load(mydict['checkpoint_restore']), strict=True)
     else:
         print('Train from scratch!')
 
@@ -139,17 +155,11 @@ def train_func(mydict):
         log_file.write(key + ':' + str(val) + '\n')
     log_file.close()
 
-    # Train loop
-    best_dict = {}
-    best_dict['epoch'] = 0
-    best_dict['avg_val_loss'] = 1000.0
-    print("Let the training begin!")
-
     scaler = torch.cuda.amp.GradScaler()
     writer = SummaryWriter(mydict['output_folder'])
 
     num_batches = len(training_generator)
-    for epoch in range(mydict['num_epochs']):
+    for epoch in range(best_dict['epoch'], mydict['num_epochs']):
 
         network.to(device).train() # after .eval() in validation
 
@@ -165,9 +175,7 @@ def train_func(mydict):
             x = x.to(device, non_blocking=True)
             x = x.type(torch.cuda.FloatTensor)
             mask = mask.to(device, non_blocking=True)
-            # mask = mask.type(torch.cuda.FloatTensor) # make mask logic
             y_gt = y_gt.to(device, non_blocking=True)
-            y_gt = y_gt.type(torch.cuda.FloatTensor)
 
             # Data Augmentation
             transform_intensity = cc.ctx.batch(SequentialTransform([
@@ -232,6 +240,7 @@ def train_func(mydict):
                 if torch.isnan(train_loss):
                     print("NaN detected in training loss. Exiting...")
                     sys.exit(1)
+                writer.add_scalar('Loss/train', train_loss, step + epoch * num_batches)
                 avg_train_loss += train_loss
 
             scaler.scale(train_loss).backward()
@@ -244,7 +253,6 @@ def train_func(mydict):
             scaler.update()
 
         avg_train_loss /= num_batches
-        writer.add_scalar('Loss/train', avg_train_loss, epoch)
         epoch_end_time = time()
         print("Epoch {} took {} seconds.\nAverage training loss: {}".format(epoch, epoch_end_time-epoch_start_time, avg_train_loss))
 
@@ -253,7 +261,7 @@ def train_func(mydict):
             with torch.no_grad():
                 network.eval()
                 validation_iterator = iter(validation_generator)
-                avg_val_loss = 1000.0
+                avg_val_loss = 0.0
                 mask_dice = 0.0
                 for validation_step in range(len(validation_generator)):
                     print("Validation Step {}.".format(validation_step))
@@ -291,8 +299,8 @@ def train_func(mydict):
                 mask_dice /= len(validation_generator)
                 avg_val_loss /= len(validation_generator)
             validation_end_time = time()
-            writer.add_scalar('Loss/val', avg_val_loss, epoch)
-            writer.add_scalar('Dice/val', mask_dice, epoch)
+            writer.add_scalar('Loss/val', avg_val_loss, step + epoch * num_batches)
+            writer.add_scalar('Dice/val', mask_dice, step + epoch * num_batches)
             print("End of epoch validation took {} seconds.\nAverage validation loss: {}.\nAverage dice: {}"
                   .format(validation_end_time - validation_start_time, avg_val_loss, mask_dice))
 
@@ -305,15 +313,37 @@ def train_func(mydict):
                     best_dict['avg_val_loss'] = avg_val_loss
                     best_dict['epoch'] = epoch
             if epoch == best_dict['epoch']:
-                torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
+                torch.save({
+                    'epoch': best_dict['epoch'],
+                    'model_state_dict': network.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': best_dict['avg_val_loss'],
+                    }, os.path.join(mydict['output_folder'], "model_best.pth"))
+                
+                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
                 # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_best.pth"))
             print("Best epoch so far: {}\n".format(best_dict))
 
             # save checkpoint for save_every
             if epoch % mydict['save_every'] == 0:
-                torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
-                torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_last.pth"))
+                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
+                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_last.pth"))
+
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': network.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': avg_val_loss,
+                    }, os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
+                
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': network.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': avg_val_loss,
+                    }, os.path.join(mydict['output_folder'], "model_last.pth"))
+                
                 # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
                 # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 

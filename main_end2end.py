@@ -20,13 +20,14 @@ from cornucopia import (
 # from dataloader_aug import regress
 from dataloader_aug_cc import regress
 from unet.unet_3d import UNet_3d
-from utilities import SoftDiceLoss, softmax_helper, dice_loss
+from utilities import SoftDiceLoss, softmax_helper, dice_loss, onehot_encoding, differentiable_one_hot
 import torch
 import pdb
 import torch.nn as nn
 from collections import OrderedDict
 from fitting_functions import least_square_fitting
 from torch.utils.tensorboard import SummaryWriter
+from fitting_functions import MRIread
 
 def parse_func(args):
     ### Reading the parameters json file
@@ -101,16 +102,57 @@ def train_func(mydict):
     # Optimizer
     optimizer = torch.optim.SGD(network.parameters(), mydict['learning_rate'], weight_decay=0.00003, momentum=0.99, nesterov=True)
 
+    # Train loop
+    best_dict = {}
+    best_dict['epoch'] = 0
+    best_dict['avg_val_loss'] = 1000.0
+    print("Let the training begin!")
+
     # Load checkpoint (if specified)
     if os.path.exists(mydict['output_folder'] + '/model_best.pth'):
         print('Finetune the best model!')
-        network.load_state_dict(torch.load(mydict['output_folder'] + '/model_best.pth'), strict=True)
+        try:
+            network.load_state_dict(torch.load(mydict['output_folder'] + '/model_best.pth')['model_state_dict'], strict=True)
+            best_dict['epoch'] = torch.load(mydict['output_folder'] + '/model_best.pth')['epoch']
+            best_dict['avg_val_loss'] = torch.load(mydict['output_folder'] + '/model_best.pth')['loss']
+        except:
+            network.load_state_dict(torch.load(mydict['output_folder'] + '/model_best.pth'), strict=True)
     elif mydict['checkpoint_restore'] != "" and os.path.exists(mydict['checkpoint_restore']):
         print('Load the best baseline model!')
-        network.load_state_dict(torch.load(mydict['checkpoint_restore']), strict=True)
+        try:
+            network.load_state_dict(torch.load(mydict['checkpoint_restore'])['model_state_dict'], strict=True)
+            best_dict['epoch'] = torch.load(mydict['checkpoint_restore'])['epoch']
+            best_dict['avg_val_loss'] = torch.load(mydict['checkpoint_restore'])['loss']
+        except:
+            network.load_state_dict(torch.load(mydict['checkpoint_restore']), strict=True)
     else:
         print('Train from scratch!')
 
+    ## Define one hot encoding
+    label_list_segmentation = [0, 14, 15, 16,
+                2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
+                41, 42, 43, 44, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
+
+    n_labels = len(label_list_segmentation)
+
+    # create look up table
+    lut = torch.zeros(10000, dtype=torch.long, device='cuda')
+    lut_deform = torch.zeros(10000, dtype=torch.long, device='cuda')
+    for l in range(n_labels):
+        lut[label_list_segmentation[l]] = l
+        lut_deform[l] = l
+
+    onehotmatrix = torch.eye(n_labels, dtype=torch.float, device='cuda')
+
+    ## Load MNI and MNI segmentation
+    MNISeg, Maff2 = MRIread('fitting/mni.seg.nii.gz', im_only=False, dtype='int32')
+    MNISeg = torch.tensor(MNISeg, device='cuda', dtype=torch.int16)
+    MNISeg = MNISeg[None, None, ...]
+
+    MNISeg_onehot = onehot_encoding(MNISeg, onehotmatrix, lut)
+    MNISeg = torch.unsqueeze(torch.argmax(MNISeg_onehot, dim=1), dim=1).to(dtype=torch.int).squeeze()
+    
+    MNI, aff2 = MRIread('fitting/mni.nii.gz')
 
     # Losses
     soft_dice_args = {'batch_dice': True, 'smooth': 1e-5, 'do_bg': False}
@@ -142,18 +184,11 @@ def train_func(mydict):
         log_file.write(key + ':' + str(val) + '\n')
     log_file.close()
 
-    # Train loop
-    best_dict = {}
-    best_dict['epoch'] = 0
-    best_dict['avg_val_loss'] = 1000.0
-    print("Let the training begin!")
-
     scaler = torch.cuda.amp.GradScaler()
     writer = SummaryWriter(mydict['output_folder'])
     
     num_batches = len(training_generator)
-    for epoch in range(mydict['num_epochs']):
-
+    for epoch in range(best_dict['epoch'], mydict['num_epochs']):
         network.to(device).train() # after .eval() in validation
 
         avg_train_loss = 0.0
@@ -185,40 +220,9 @@ def train_func(mydict):
             x, mask, y_gt, seg = transform_spatial(x, mask, y_gt, seg)
             mask = mask.type(torch.cuda.FloatTensor)
             seg = seg.type(torch.cuda.FloatTensor) 
-            seg[seg == 24] = 0
 
             # one hot encoding
-            label_list_segmentation = [0, 14, 15, 16,
-                            2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
-                            41, 42, 43, 44, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
-
-            n_labels = len(label_list_segmentation)
-
-            # create look up table
-            lut = torch.zeros(10000, dtype=torch.long, device=device)
-            for l in range(n_labels):
-                lut[label_list_segmentation[l]] = l
-
-            onehotmatrix = torch.eye(n_labels, dtype=torch.float, device=device)
-            label = seg[:,0,:]
-            seg_onehot = onehotmatrix[lut[label.long()]]
-            seg_onehot = seg_onehot.permute(0, 4, 1, 2, 3)
-
-            # # test dataloader_aug_cc.py
-            # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
-            # new_image.to_filename('samples/aug_image.nii.gz')
-
-            # new_mask = nib.Nifti1Image(mask[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
-            # new_mask.to_filename('samples/aug_mask.nii.gz')
-
-            # y_gt = y_gt[0,:,:,:,:]
-            # y_gt = y_gt.permute(1, 2, 3, 0)
-            # new_target = nib.Nifti1Image(y_gt.cpu().detach().numpy(), affine=affine[0])
-            # new_target.to_filename('samples/aug_target.nii.gz')
-
-            # discrete_labels = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int)
-            # new_seg = nib.Nifti1Image(discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
-            # new_seg.to_filename('samples/aug_seg.nii.gz')
+            seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
 
             DEFimg = torch.empty_like(x)
             DEFseg = torch.empty_like(mask)
@@ -226,15 +230,27 @@ def train_func(mydict):
                 y_pred = network(x)
                 for i in range(x.shape[0]):
                     channels_to_select = [0, 1, 2, 6, 7]
-                    DEFimg[i,0,:], DEFseg[i,0,:] = least_square_fitting(x[i,:], y_pred[i, channels_to_select, :].to(dtype=torch.float))
-                    
-                    # deform_new_seg = nib.Nifti1Image(DEFseg[i,0,:].cpu().detach().numpy(), affine=affine[0].cpu().detach().numpy())
-                    # deform_new_seg.to_filename('samples/deform_aug_seg.nii.gz')
-                    # import pdb; pdb.set_trace()
+                    DEFimg[i,0,:], DEFseg[i,0,:] = least_square_fitting(y_pred[i, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
 
-                deform_label = DEFseg[:,0,:]
-                deform_seg_onehot = onehotmatrix[lut[deform_label.long()]]
-                deform_seg_onehot = deform_seg_onehot.permute(0, 4, 1, 2, 3)
+                DEFseg = DEFseg.round()
+                deform_seg_onehot = differentiable_one_hot(DEFseg, n_labels)
+                # deform_seg_onehot = onehot_encoding(DEFseg, onehotmatrix, lut_deform)
+
+                # # test dataloader_aug_cc.py
+                # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+                # new_image.to_filename('samples/aug_image.nii.gz')
+
+                # new_mask = nib.Nifti1Image(mask[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+                # new_mask.to_filename('samples/aug_mask.nii.gz')
+
+                # y_gt = y_gt[0,:,:,:,:]
+                # y_gt = y_gt.permute(1, 2, 3, 0)
+                # new_target = nib.Nifti1Image(y_gt.cpu().detach().numpy(), affine=affine[0])
+                # new_target.to_filename('samples/aug_target.nii.gz')
+
+                # discrete_labels = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int)
+                # new_seg = nib.Nifti1Image(discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
+                # new_seg.to_filename('samples/aug_seg.nii.gz')
 
                 # deform_discrete_labels = torch.unsqueeze(torch.argmax(deform_seg_onehot, dim=1), dim=1).to(dtype=torch.int)
                 # deform_new_seg = nib.Nifti1Image(deform_discrete_labels[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
@@ -245,10 +261,10 @@ def train_func(mydict):
 
                 if mydict['mode'] == 'pre': 
                     if mydict['regress_loss'] == 'l1':
-                        print("We are using L1 loss for regression!")
+                        print("We are using L1 loss for regression with three channels!")
                         regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
                     else:
-                        print("We are using L2 loss for regression!")
+                        print("We are using L2 loss for regression with three channels!")
                         regress_loss = l2_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
 
                     train_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
@@ -270,7 +286,7 @@ def train_func(mydict):
                         uncer_loss = torch.mean(y_pred[:,3,] * mask + l1_loss(y_pred[:,0,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,0,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
                                                 y_pred[:,4,] * mask + l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,4,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,4,]))) + \
                                                 y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
-                        # import pdb; pdb.set_trace()
+
                         seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
@@ -278,6 +294,8 @@ def train_func(mydict):
                 if torch.isnan(train_loss):
                     print("NaN detected in training loss. Exiting...")
                     sys.exit(1)
+                
+                writer.add_scalar('Loss/train', train_loss, step + epoch * num_batches)
                 avg_train_loss += train_loss
 
             scaler.scale(train_loss).backward()
@@ -290,7 +308,6 @@ def train_func(mydict):
             scaler.update()
 
         avg_train_loss /= num_batches
-        writer.add_scalar('Loss/train', avg_train_loss, epoch)
         epoch_end_time = time()
         print("Epoch {} took {} seconds.\nAverage training loss: {}".format(epoch, epoch_end_time-epoch_start_time, avg_train_loss))
 
@@ -299,7 +316,7 @@ def train_func(mydict):
             with torch.no_grad():
                 network.eval()
                 validation_iterator = iter(validation_generator)
-                avg_val_loss = 1000.0
+                avg_val_loss = 0.0
                 mask_dice = 0.0
                 for validation_step in range(len(validation_generator)):
                     print("Validation Step {}.".format(validation_step))
@@ -330,15 +347,16 @@ def train_func(mydict):
                         val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
                     else:
                         val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
-                    
+
                     avg_val_loss += val_loss
                     mask_dice += sdl(y_pred[:,6:8,:], mask)
+
                 mask_dice = -mask_dice # because SoftDice returns negative dice
                 mask_dice /= len(validation_generator)
                 avg_val_loss /= len(validation_generator)
             validation_end_time = time()
-            writer.add_scalar('Loss/val', avg_val_loss, epoch)
-            writer.add_scalar('Dice/val', mask_dice, epoch)
+            writer.add_scalar('Loss/val', avg_val_loss, step + epoch * num_batches)
+            writer.add_scalar('Dice/val', mask_dice, step + epoch * num_batches)
             print("End of epoch validation took {} seconds.\nAverage validation loss: {}.\nAverage dice: {}"
                   .format(validation_end_time - validation_start_time, avg_val_loss, mask_dice))
 
@@ -351,15 +369,37 @@ def train_func(mydict):
                     best_dict['avg_val_loss'] = avg_val_loss
                     best_dict['epoch'] = epoch
             if epoch == best_dict['epoch']:
-                torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
+                torch.save({
+                    'epoch': best_dict['epoch'],
+                    'model_state_dict': network.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': best_dict['avg_val_loss'],
+                    }, os.path.join(mydict['output_folder'], "model_best.pth"))
+                
+                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
                 # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_best.pth"))
             print("Best epoch so far: {}\n".format(best_dict))
 
             # save checkpoint for save_every
             if epoch % mydict['save_every'] == 0:
-                torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
-                torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_last.pth"))
+                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
+                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_last.pth"))
+
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': network.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': avg_val_loss,
+                    }, os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
+                
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': network.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': avg_val_loss,
+                    }, os.path.join(mydict['output_folder'], "model_last.pth"))
+                
                 # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
                 #            os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
                 # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 

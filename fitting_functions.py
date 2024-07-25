@@ -9,6 +9,7 @@ from time import time
 import nibabel as nib
 from dataloader_aug_cc import regress
 from torch.utils import data
+import torch.nn.functional as F
 
 def MRIread(filename, dtype=None, im_only=False):
 
@@ -109,23 +110,14 @@ def fast_3D_interp_torch(X, II, JJ, KK, mode, device, default_value_linear=0.0):
 
     return Y
 
-def least_square_fitting(im, pred):
-    im = torch.squeeze(im)
-
-    pred_mask_temp = pred[4:5,...] > pred[3:4,...]
-    normalizer = torch.median(im[pred_mask_temp[0,...]])
-
-    im /= normalizer    
+def least_square_fitting(pred, aff2, MNI, MNISeg):
+ 
     pred = 100 * pred
     pred_mni = pred.permute([1, 2, 3, 0])
 
     y_pred_binary = torch.argmax(pred_mni[...,3:5], dim=-1)
     M = torch.tensor(binary_fill_holes((y_pred_binary > 0.5).detach().cpu().numpy()), device='cuda', dtype=torch.bool)
 
-    MNISeg, Maff2 = MRIread('fitting/mni.seg.nii.gz', im_only=False, dtype='int32')
-    MNISeg = torch.tensor(MNISeg, device='cuda', dtype=torch.int16)
-    
-    MNI, aff2 = MRIread('fitting/mni.nii.gz')
     A = np.linalg.inv(aff2)
     MNI = torch.tensor(MNI, device='cuda', dtype=torch.float32)
     A = torch.tensor(A, device='cuda', dtype=torch.float32)
@@ -170,7 +162,7 @@ def least_square_fitting(im, pred):
     valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
     DEFimg = torch.zeros_like(pred_mni[..., 0])
     DEFimg[M] = valsAff
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
     DEFseg = torch.zeros_like(pred_mni[..., 0])
     DEFseg[M] = valsAff_seg
@@ -179,10 +171,6 @@ def least_square_fitting(im, pred):
 
 if __name__ == "__main__":
     start_time = time()
-    # input_path = '/autofs/vast/lemon/data_original_downloads/OASIS3/sub-0103/anat/sub-0103_T1w.nii.gz'
-    # im, aff = MRIread(input_path, im_only=False, dtype='float')
-    # im = torch.tensor(im, device='cuda', dtype=torch.float64).unsqueeze(0)
-    # aff = torch.tensor(aff, device='cuda', dtype=torch.float64)
 
     training_set = regress('data_lists/regress/train_list.csv', 'data/', is_training=True)
     trainloader = data.DataLoader(training_set,batch_size=4,shuffle=True, drop_last=True, pin_memory=False) 
@@ -203,9 +191,32 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
     pred = model(im.to('cuda').to(dtype=torch.float)) 
     channels_to_select = [0, 1, 2, 6, 7]
-    # pred = pred[0, channels_to_select, :, :]
 
-    DEFimg, DEFseg = least_square_fitting(im[0,:].to('cuda'), pred[0, channels_to_select, :])
+    # Define one-hot encoding   
+    from utilities import onehot_encoding
+    label_list_segmentation = [0, 14, 15, 16,
+                2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
+                41, 42, 43, 44, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
+
+    n_labels = len(label_list_segmentation)
+
+    # create look up table
+    lut = torch.zeros(10000, dtype=torch.long, device='cuda')
+    for l in range(n_labels):
+        lut[label_list_segmentation[l]] = l
+
+    onehotmatrix = torch.eye(n_labels, dtype=torch.float, device='cuda')
+        
+    ## Load MNI and MNI segmentation
+    MNISeg, Maff2 = MRIread('fitting/mni.seg.nii.gz', im_only=False, dtype='int32')
+    MNISeg = torch.tensor(MNISeg, device='cuda', dtype=torch.int16)
+    MNISeg = MNISeg[None, None, ...]
+    seg_onehot = onehot_encoding(MNISeg, onehotmatrix, lut)
+    MNISeg = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int).squeeze()
+    
+    MNI, aff2 = MRIread('fitting/mni.nii.gz')
+
+    DEFimg, DEFseg = least_square_fitting(pred[0, channels_to_select, :], aff2, MNI, MNISeg)
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 
