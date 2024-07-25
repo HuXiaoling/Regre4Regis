@@ -208,6 +208,7 @@ def train_func(mydict):
                 y_pred = network(x)
 
                 mask_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                writer.add_scalar('Loss/train_mask', mask_loss, step + epoch * num_batches)
 
                 if mydict['mode'] == 'pre': 
                     if mydict['regress_loss'] == 'l1':
