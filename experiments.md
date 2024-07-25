@@ -161,4 +161,4 @@
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Running |
 | 8 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Running |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 5     |  |  |  |  | Running |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Running |
