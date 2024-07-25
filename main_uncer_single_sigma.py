@@ -324,16 +324,11 @@ def train_func(mydict):
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': best_dict['avg_val_loss'],
                     }, os.path.join(mydict['output_folder'], "model_best.pth"))
-                
-                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_best.pth"))
-                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
-                #            os.path.join(mydict['output_folder'], "model_best.pth"))
+
             print("Best epoch so far: {}\n".format(best_dict))
 
             # save checkpoint for save_every
             if epoch % mydict['save_every'] == 0:
-                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
-                # torch.save(network.state_dict(), os.path.join(mydict['output_folder'], "model_last.pth"))
 
                 torch.save({
                     'epoch': epoch,
@@ -348,11 +343,6 @@ def train_func(mydict):
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': avg_val_loss,
                     }, os.path.join(mydict['output_folder'], "model_last.pth"))
-                
-                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
-                #            os.path.join(mydict['output_folder'], "model_epoch" + str(epoch) + ".pth"))
-                # torch.save({'epoch': epoch, 'dice': mask_dice, 'model_state_dict': network.state_dict(),}, 
-                #            os.path.join(mydict['output_folder'], "model_last.pth"))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
