@@ -21,6 +21,7 @@ from cornucopia import (
 from dataloader_aug_cc import regress
 from unet.unet_3d import UNet_3d
 from utilities import SoftDiceLoss, softmax_helper
+from utilities import uncer_loss_three_gaussian, uncer_loss_three_lap
 import torch
 import pdb
 import torch.nn as nn
@@ -225,9 +226,7 @@ def train_func(mydict):
                     if mydict['uncer'] == 'gaussian':
                         print("We are using Gaussian distribution to model uncertainty for three sigmas!")
                         
-                        uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
-                                                      y_pred[:,4,] * mask + (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,4,])) + \
-                                                      y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
+                        uncer_loss = uncer_loss_three_gaussian(y_pred, y_gt, mask)
                         writer.add_scalar('Loss/train_uncer', uncer_loss, step + epoch * num_batches)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss
@@ -235,9 +234,7 @@ def train_func(mydict):
                     else:
                         print("We are using Laplacian distribution to model uncertainty for three sigmas!")
 
-                        uncer_loss = torch.mean(y_pred[:,3,] * mask + l1_loss(y_pred[:,0,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,0,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
-                                                y_pred[:,4,] * mask + l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,4,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,4,]))) + \
-                                                y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
+                        uncer_loss = uncer_loss_three_lap(y_pred, y_gt, mask)
                         writer.add_scalar('Loss/train_uncer', uncer_loss, step + epoch * num_batches)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss
@@ -282,16 +279,16 @@ def train_func(mydict):
                     
                     regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
                     mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                    writer.add_scalar('Loss/val_regress', regress_loss, step + epoch * num_batches)
+                    writer.add_scalar('Loss/val_mask', mask_loss, step + epoch * num_batches)
 
                     if mydict['uncer'] == 'gaussian':
-                        uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
-                                                      y_pred[:,4,] * mask + (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,4,])) + \
-                                                      y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
+                        uncer_loss = uncer_loss_three_gaussian(y_pred, y_gt, mask)
+                        writer.add_scalar('Loss/val_uncer', uncer_loss, step + epoch * num_batches)
 
                     else:
-                        uncer_loss = torch.mean(y_pred[:,3,] * mask + l1_loss(y_pred[:,0,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,0,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
-                                                y_pred[:,4,] * mask + l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,4,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,4,]))) + \
-                                                y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
+                        uncer_loss = uncer_loss_three_lap(y_pred, y_gt, mask)
+                        writer.add_scalar('Loss/val_uncer', uncer_loss, step + epoch * num_batches)
 
                     if mydict['mode'] == 'pre':
                         val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss

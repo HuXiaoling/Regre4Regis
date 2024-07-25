@@ -265,3 +265,28 @@ def differentiable_one_hot(labels, num_classes):
     
     return one_hot_labels
 
+def uncer_loss_single_gaussian(y_pred, y_gt, mask):
+    uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
+                                                        (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
+                                                        (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,]))) / (1e-6 + torch.mean(mask))
+    return uncer_loss
+
+def uncer_loss_single_lap(y_pred, y_gt, mask):
+    l1_loss = nn.L1Loss()
+    uncer_loss = torch.mean(y_pred[:,3,] * mask + l1_loss(y_pred[:,0,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,0,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
+                                                  l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
+                                                  l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,3,])))) / (1e-6 + torch.mean(mask))
+    return uncer_loss
+
+def uncer_loss_three_gaussian(y_pred, y_gt, mask):
+    uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
+                                  y_pred[:,4,] * mask + (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,4,])) + \
+                                  y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
+    return uncer_loss
+
+def uncer_loss_three_lap(y_pred, y_gt, mask):
+    l1_loss = nn.L1Loss()
+    uncer_loss = torch.mean(y_pred[:,3,] * mask + l1_loss(y_pred[:,0,] * mask / (0.03 * torch.exp(y_pred[:,3,])), y_gt[:,0,:] * mask / (0.03 * torch.exp(y_pred[:,3,]))) + \
+                            y_pred[:,4,] * mask + l1_loss(y_pred[:,1,] * mask / (0.03 * torch.exp(y_pred[:,4,])), y_gt[:,1,:] * mask / (0.03 * torch.exp(y_pred[:,4,]))) + \
+                            y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
+    return uncer_loss

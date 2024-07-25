@@ -120,40 +120,40 @@
 
 | Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 6 channels    | 1             | 0.5           | Gaussian  0.01            |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Gaussian  0.05            |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Gaussian  0.1             |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Gaussian  0.5             |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Laplacian 0.01            |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Laplacian 0.05            |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Laplacian 0.1             |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Laplacian 0.5             |           |           |           |           | Running   |
+| 6 channels    | 1             | 0.5           | Gaussian  0.01            |           |           |           |           | Done  |
+| 6 channels    | 1             | 0.5           | Gaussian  0.05            |           |           |           |           | Done  |
+| 6 channels    | 1             | 0.5           | Gaussian  0.1             |           |           |           |           | Done  |
+| 6 channels    | 1             | 0.5           | Gaussian  0.5             |           |           |           |           | Done  |
+| 6 channels    | 1             | 0.5           | Laplacian 0.01            |           |           |           |           | Done  |
+| 6 channels    | 1             | 0.5           | Laplacian 0.05            |           |           |           |           | Done  |
+| 6 channels    | 1             | 0.5           | Laplacian 0.1             |           |           |           |           | Done  |
+| 6 channels    | 1             | 0.5           | Laplacian 0.5             |           |           |           |           | Done  |
 
 ### Finetune experimental results ($\lambda_{mask} = 0.1$)
 
 | Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 6 channels    | 1             | 0.1           | Gaussian  0.01            |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.1           | Gaussian  0.05            |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.1           | Gaussian  0.1             |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.1           | Gaussian  0.5             |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.1           | Laplacian 0.01            |           |           |           |           |           |
-| 6 channels    | 1             | 0.1           | Laplacian 0.05            |           |           |           |           |           |
-| 6 channels    | 1             | 0.1           | Laplacian 0.1             |           |           |           |           |           |
-| 6 channels    | 1             | 0.1           | Laplacian 0.5             |           |           |           |           |           |
+| 6 channels    | 1             | 0.1           | Gaussian  0.01            |           |           |           |           | Done      |
+| 6 channels    | 1             | 0.1           | Gaussian  0.05            |           |           |           |           | Done      |
+| 6 channels    | 1             | 0.1           | Gaussian  0.1             |           |           |           |           | Done      |
+| 6 channels    | 1             | 0.1           | Gaussian  0.5             |           |           |           |           | Done      |
+| 6 channels    | 1             | 0.1           | Laplacian 0.01            |           |           |           |           | Running   |
+| 6 channels    | 1             | 0.1           | Laplacian 0.05            |           |           |           |           | Running   |
+| 6 channels    | 1             | 0.1           | Laplacian 0.1             |           |           |           |           | Running   |
+| 6 channels    | 1             | 0.1           | Laplacian 0.5             |           |           |           |           | Running   |
 
 ### Finetune experimental results ($\lambda_{mask} = 0.01$)
 
 | Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1             | 0.01          | Gaussian  0.01            |           |           |           |           |       |
-| 8 channels    | 1             | 0.01          | Gaussian  0.05            |           |           |           |           |       |
-| 8 channels    | 1             | 0.01          | Gaussian  0.1             |           |           |           |           |       |
-| 8 channels    | 1             | 0.01          | Gaussian  0.5             |           |           |           |           |       |
-| 8 channels    | 1             | 0.01          | Laplacian 0.01            |           |           |           |           |       |
-| 8 channels    | 1             | 0.01          | Laplacian 0.05            |           |           |           |           |       |
-| 8 channels    | 1             | 0.01          | Laplacian 0.1             |           |           |           |           |       |
-| 8 channels    | 1             | 0.01          | Laplacian 0.5             |           |           |           |           |       |
+| 8 channels    | 1             | 0.01          | Gaussian  0.01            |           |           |           |           | Running   |
+| 8 channels    | 1             | 0.01          | Gaussian  0.05            |           |           |           |           | Running   |
+| 8 channels    | 1             | 0.01          | Gaussian  0.1             |           |           |           |           | To run    |
+| 8 channels    | 1             | 0.01          | Gaussian  0.5             |           |           |           |           | To run    |
+| 8 channels    | 1             | 0.01          | Laplacian 0.01            |           |           |           |           | Running   |
+| 8 channels    | 1             | 0.01          | Laplacian 0.05            |           |           |           |           | Running   |
+| 8 channels    | 1             | 0.01          | Laplacian 0.1             |           |           |           |           | Running   |
+| 8 channels    | 1             | 0.01          | Laplacian 0.5             |           |           |           |           | Running   |
 
 ## End2end experimental results
 
