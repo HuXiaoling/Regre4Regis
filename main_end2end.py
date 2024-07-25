@@ -258,14 +258,17 @@ def train_func(mydict):
                 # import pdb; pdb.set_trace()
 
                 mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                writer.add_scalar('Loss/train', mask_loss, step + epoch * num_batches)
 
                 if mydict['mode'] == 'pre': 
                     if mydict['regress_loss'] == 'l1':
                         print("We are using L1 loss for regression with three channels!")
                         regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
+                        writer.add_scalar('Loss/train_regress', regress_loss, step + epoch * num_batches)
                     else:
                         print("We are using L2 loss for regression with three channels!")
                         regress_loss = l2_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
+                        writer.add_scalar('Loss/train_regress', regress_loss, step + epoch * num_batches)
 
                     train_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
                 else:
@@ -277,6 +280,8 @@ def train_func(mydict):
                                                       y_pred[:,5,] * mask + (y_pred[:,2,] * mask - y_gt[:,2,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,5,]))) / (1e-6 + torch.mean(mask))
                         
                         seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
+                        writer.add_scalar('Loss/train_uncer', uncer_loss, step + epoch * num_batches)
+                        writer.add_scalar('Loss/train_seg', seg_loss, step + epoch * num_batches)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
@@ -288,6 +293,8 @@ def train_func(mydict):
                                                 y_pred[:,5,] * mask + l1_loss(y_pred[:,2,] * mask / (0.03 * torch.exp(y_pred[:,5,])), y_gt[:,2,:] * mask / (0.03 * torch.exp(y_pred[:,5,])))) / (1e-6 + torch.mean(mask))
 
                         seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
+                        writer.add_scalar('Loss/train_uncer', uncer_loss, step + epoch * num_batches)
+                        writer.add_scalar('Loss/train_seg', seg_loss, step + epoch * num_batches)
 
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
