@@ -15,12 +15,9 @@ python3 inference.py --params params/regress_test.json
 
 ##### Setting1: regress sigma for each channel separately (three sigmas)
 
-Step1: regress coordinates and masks only 
 ```
 python3 main_uncer.py --params params/regress_train.json ("mode": "pre")
-```     
-Step2: regress sigma
-```
+
 python3 main_uncer.py --params params/regress_train.json ("mode": "training/finetune")
 
 python3 inference_uncer.py --params params/regress_test.json
@@ -28,12 +25,9 @@ python3 inference_uncer.py --params params/regress_test.json
 
 ##### Setting2:  regress single sigma for three channel
 
-Step1: regress coordinates and masks only
 ```
 python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "pre")
-```     
-Step2: regress sigma
-```
+
 python3 main_uncer_single_sigma.py --params params/regress_train.json ("mode": "training/finetune")
 
 python3 inference_uncer_single_sigma.py --params params/regress_test.json
@@ -65,13 +59,21 @@ python ./scripts/test_inference_only_reg_many_models_ours.py
     --output_dir FOL/ 
     --checkpoint_restore experiments/regress/train_outputs_full_aug_yogurt_2/model_best.pth
 ```
-## End2end setting
+## End2end
 
-Step1: regress coordinates and masks only 
+### Setting1: regress sigma for each channel separately (three sigmas)
+
+
 ```
 python3 main_end2end.py --params params/regress_train.json ("mode": "pre")
-```     
-Step2: regress sigma and fitting
-```
+
 python3 main_end2end.py --params params/regress_train.json ("mode": "training/finetune")
+```
+
+### Setting2: regress single sigma for three channel
+
+```
+python3 main_end2end_single_sigma.py --params params/regress_train.json ("mode": "pre")
+
+python3 main_end2end_single_sigma.py --params params/regress_train.json ("mode": "training/finetune")
 ```
