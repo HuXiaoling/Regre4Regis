@@ -256,12 +256,12 @@ def differentiable_one_hot(labels, num_classes):
     # Expand dimensions of class_range to match labels for broadcasting
     for _ in range(labels.dim()):
         class_range = class_range.unsqueeze(0)
-    
+
     # Compute one-hot encoding using softmax-like operations
     # Create a large negative value for numerical stability in softmax
     large_negative = -1000.0
     one_hot_labels = torch.nn.functional.softmax(large_negative * torch.abs(labels.unsqueeze(-1) - class_range), dim=-1)
-    one_hot_labels = one_hot_labels.squeeze().permute(0, 4, 1, 2, 3)
+    one_hot_labels = one_hot_labels[:,0,:,].permute(0, 4, 1, 2, 3)
     
     return one_hot_labels
 

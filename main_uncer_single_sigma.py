@@ -279,16 +279,12 @@ def train_func(mydict):
                     
                     regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
                     mask_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
-                    writer.add_scalar('Loss/val_regress', regress_loss, step + epoch * num_batches)
-                    writer.add_scalar('Loss/val_mask', mask_loss, step + epoch * num_batches)
 
                     if mydict['uncer'] == 'gaussian':
                         uncer_loss = uncer_loss_single_gaussian(y_pred, y_gt, mask)
-                        writer.add_scalar('Loss/val_uncer', uncer_loss, step + epoch * num_batches)
 
                     else:                        
                         uncer_loss = uncer_loss_single_lap(y_pred, y_gt, mask)
-                        writer.add_scalar('Loss/val_uncer', uncer_loss, step + epoch * num_batches)
 
                     if mydict['mode'] == 'pre':
                         val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss

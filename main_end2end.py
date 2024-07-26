@@ -234,6 +234,7 @@ def train_func(mydict):
                     DEFimg[i,0,:], DEFseg[i,0,:] = least_square_fitting(y_pred[i, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
 
                 DEFseg = DEFseg.round()
+                
                 deform_seg_onehot = differentiable_one_hot(DEFseg, n_labels)
                 # deform_seg_onehot = onehot_encoding(DEFseg, onehotmatrix, lut_deform)
 
@@ -334,16 +335,22 @@ def train_func(mydict):
                     
                     regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt * mask) / (1e-6 + torch.mean(mask))
                     mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
-                    writer.add_scalar('Loss/val_regress', regress_loss, step + epoch * num_batches)
-                    writer.add_scalar('Loss/val_mask', mask_loss, step + epoch * num_batches)
+
+                    # one hot encoding
+                    seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
+                    DEFimg = torch.empty_like(x)
+                    DEFseg = torch.empty_like(mask)
+                    channels_to_select = [0, 1, 2, 6, 7]
+                    DEFimg[0,0,:], DEFseg[0,0,:] = least_square_fitting(y_pred[0, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
+                    DEFseg = DEFseg.round()
+                    deform_seg_onehot = differentiable_one_hot(DEFseg, n_labels)
+                    seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
 
                     if mydict['uncer'] == 'gaussian':
                         uncer_loss = uncer_loss_three_gaussian(y_pred, y_gt, mask)
-                        writer.add_scalar('Loss/val_uncer', uncer_loss, step + epoch * num_batches)
                         
                     else:
                         uncer_loss = uncer_loss_three_lap(y_pred, y_gt, mask)
-                        writer.add_scalar('Loss/val_uncer', uncer_loss, step + epoch * num_batches)
 
                     if mydict['mode'] == 'pre':
                         val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
