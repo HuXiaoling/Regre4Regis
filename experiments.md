@@ -159,6 +159,9 @@
 
 | Setting | regress loss weight (l2) | mask loss weight | uncer loss weight | uncer loss weight | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Running |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Running |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Running |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Running   |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Running   |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Runnin    |
