@@ -138,10 +138,8 @@ def train_func(mydict):
 
     # create look up table
     lut = torch.zeros(10000, dtype=torch.long, device='cuda')
-    lut_deform = torch.zeros(10000, dtype=torch.long, device='cuda')
     for l in range(n_labels):
         lut[label_list_segmentation[l]] = l
-        lut_deform[l] = l
 
     onehotmatrix = torch.eye(n_labels, dtype=torch.float, device='cuda')
 
@@ -225,20 +223,18 @@ def train_func(mydict):
             # one hot encoding
             seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
 
-            DEFimg = torch.empty_like(x)
             DEFseg = torch.empty_like(mask)
             with torch.autocast(device_type='cuda', dtype=torch.float16):
                 y_pred = network(x)
                 for i in range(x.shape[0]):
                     channels_to_select = [0, 1, 2, 4, 5]
-                    DEFimg[i,0,:], DEFseg[i,0,:] = least_square_fitting(y_pred[i, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
+                    DEFseg[i,0,:] = least_square_fitting(y_pred[i, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
 
                 DEFseg = DEFseg.round()
                 
                 deform_seg_onehot = differentiable_one_hot(DEFseg, n_labels)
-                # deform_seg_onehot = onehot_encoding(DEFseg, onehotmatrix, lut_deform)
 
-                # # test dataloader_aug_cc.py
+                # test dataloader_aug_cc.py
                 # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
                 # new_image.to_filename('samples/aug_image.nii.gz')
 
@@ -338,10 +334,9 @@ def train_func(mydict):
 
                     # one hot encoding
                     seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
-                    DEFimg = torch.empty_like(x)
                     DEFseg = torch.empty_like(mask)
                     channels_to_select = [0, 1, 2, 4, 5]
-                    DEFimg[0,0,:], DEFseg[0,0,:] = least_square_fitting(y_pred[0, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
+                    DEFseg[0,0,:] = least_square_fitting(y_pred[0, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
                     DEFseg = DEFseg.round()
                     deform_seg_onehot = differentiable_one_hot(DEFseg, n_labels)
                     seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
