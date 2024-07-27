@@ -157,11 +157,24 @@
 
 ## End2end experimental results
 
-| Setting | regress loss weight (l2) | mask loss weight | uncer loss weight | uncer loss weight | mask | x | y | z | States |
+### Finetune experimental results with linear deformation (least square) for $\lambda_{mask} = 0.01$
+
+| Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Running   |
 | 8 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Running   |
 | 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | To run    |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | To run    |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Runnin    |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | To re-run |
+
+### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{mask} = 0.01$
+
+| Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
+| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | To run    |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | To run    |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Running   |

@@ -48,6 +48,7 @@ def parse_func(args):
     mydict['mode'] = params['train']['mode']
     mydict['regress_loss'] = params['train']['regress_loss']
     mydict['uncer'] = params['train']['uncer']
+    mydict['nonlin'] = params['train']['nonlin']
     mydict['output_folder'] = params['train']['output_folder']
     mydict['loss_weight_mask'] = params['train']['loss_weight_mask']
     mydict['loss_weight_uncer'] = params['train']['loss_weight_uncer']
@@ -170,6 +171,7 @@ def train_func(mydict):
     p['mode'] = mydict['mode']
     p['regress_loss'] = mydict['regress_loss']
     p['uncer'] = mydict['uncer']
+    p['nonlin'] = mydict['nonlin']
     p['loss_weight_mask'] = mydict['loss_weight_mask']
     p['loss_weight_uncer'] = mydict['loss_weight_uncer']
     p['loss_weight_seg'] = mydict['loss_weight_seg']
@@ -228,7 +230,7 @@ def train_func(mydict):
                 y_pred = network(x)
                 for i in range(x.shape[0]):
                     channels_to_select = [0, 1, 2, 6, 7]
-                    DEFseg[i,0,:] = least_square_fitting(y_pred[i, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
+                    DEFseg[i,0,:] = least_square_fitting(y_pred[i, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg, nonlin=mydict['nonlin'])
 
                 DEFseg = DEFseg.round()
                 
@@ -336,7 +338,7 @@ def train_func(mydict):
                     seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
                     DEFseg = torch.empty_like(mask)
                     channels_to_select = [0, 1, 2, 6, 7]
-                    DEFseg[0,0,:] = least_square_fitting(y_pred[0, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg)
+                    DEFseg[0,0,:] = least_square_fitting(y_pred[0, channels_to_select, :].to(dtype=torch.float), aff2, MNI, MNISeg, nonlin=mydict['nonlin'])
                     DEFseg = DEFseg.round()
                     deform_seg_onehot = differentiable_one_hot(DEFseg, n_labels)
                     seg_loss = dice_loss(seg_onehot, deform_seg_onehot)

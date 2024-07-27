@@ -133,7 +133,7 @@ def gaussian_blur_3d(input, stds, device):
         blurred = conv3d(blurred, kz[None, None, None, None, :], stride=1, padding=(0, 0, len(kz) // 2))
     return torch.squeeze(blurred)
 
-def least_square_fitting(pred, aff2, MNI, MNISeg):
+def least_square_fitting(pred, aff2, MNI, MNISeg, nonlin=False):
  
     pred = 100 * pred
     pred_mni = pred.permute([1, 2, 3, 0])
@@ -180,55 +180,54 @@ def least_square_fitting(pred, aff2, MNI, MNISeg):
     #     ii2aff += ii_nonlin
     #     jj2aff += jj_nonlin
     #     kk2aff += kk_nonlin
-
-    sigma = 3
+    if nonlin:
+        sigma = 3
         
-    idef = ii - ii2aff
-    jdef = jj - jj2aff
-    kdef = kk - kk2aff
+        idef = ii - ii2aff
+        jdef = jj - jj2aff
+        kdef = kk - kk2aff
 
-    disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
-    max_disp = torch.tensor(10.0, device='cuda')
-    toofar = disp>max_disp
+        disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
+        max_disp = torch.tensor(10.0, device='cuda')
+        toofar = disp>max_disp
 
-    new_idef = idef.clone()
-    new_jdef = jdef.clone()
-    new_kdef = kdef.clone()
+        new_idef = idef.clone()
+        new_jdef = jdef.clone()
+        new_kdef = kdef.clone()
 
-    new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
-    new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
-    new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
+        new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
+        new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
+        new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
 
-    aux = torch.zeros_like(pred_mni[..., 0])
-    aux[M] = new_idef
-    num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-    den = gaussian_blur_3d(M.float(), [sigma, sigma, sigma], device='cuda')
-    new_idef = num[M] / den[M]
-    aux[M] = new_jdef
-    num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-    new_jdef = num[M] / den[M]
-    aux[M] = new_kdef
-    num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-    new_kdef = num[M] / den[M]
+        aux = torch.zeros_like(pred_mni[..., 0])
+        aux[M] = new_idef
+        num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+        den = gaussian_blur_3d(M.float(), [sigma, sigma, sigma], device='cuda')
+        new_idef = num[M] / den[M]
+        aux[M] = new_jdef
+        num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+        new_jdef = num[M] / den[M]
+        aux[M] = new_kdef
+        num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+        new_kdef = num[M] / den[M]
 
-    ii2demon = ii2aff + new_idef
-    jj2demon = jj2aff + new_jdef
-    kk2demon = kk2aff + new_kdef
+        ii2demon = ii2aff + new_idef
+        jj2demon = jj2aff + new_jdef
+        kk2demon = kk2aff + new_kdef
 
-    valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
-    DEFdemon_ransacseg = torch.zeros_like(pred_mni[..., 0])
-    DEFdemon_ransacseg[M] = valsDemon_seg
-    # import pdb; pdb.set_trace()
-    # deformation
-    # valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
-    # DEFimg = torch.zeros_like(pred_mni[..., 0])
-    # DEFimg[M] = valsAff
+        valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
+        DEFseg = torch.zeros_like(pred_mni[..., 0])
+        DEFseg[M] = valsDemon_seg
+    else:
+        # valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
+        # DEFimg = torch.zeros_like(pred_mni[..., 0])
+        # DEFimg[M] = valsAff
 
-    # valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
-    # DEFseg = torch.zeros_like(pred_mni[..., 0])
-    # DEFseg[M] = valsAff_seg
+        valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
+        DEFseg = torch.zeros_like(pred_mni[..., 0])
+        DEFseg[M] = valsAff_seg
 
-    return DEFdemon_ransacseg
+    return DEFseg
 
 if __name__ == "__main__":
     start_time = time()
