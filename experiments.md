@@ -4,13 +4,13 @@
 
 ### Pre-training experimental results without uncertainty branch
 
-| Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 |   5 channels  | 1 (0.0147)    | 0.5 (-0.7352) | ---   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
 ### Pre-training experimental results by using l2 regression loss
 
-| Setting | regress loss weight (l2) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1 (0.0363)    | 0.01 (-0.6640)    | --- (3.7952)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 8 channels    | 1 (0.0410)    | 0.05 (-0.7070)    | --- (5.1415)  | &check;   | &check;   | &check;   | &check;   | Yes   |
@@ -23,7 +23,7 @@
 
 ### Finetune experimental results ($\lambda_{mask} = 0.5$)
 
-| Setting | regress loss weight (l2) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1 (0.1088)    | 0.5 (-0.7209) | Gaussian  0.1  (2.9452)   | &check;   | &check;   | &check;   | &cross;   | No    |
 | 8 channels    | 1 (0.1081)    | 0.5 (-0.7045) | Gaussian  0.5  (2.9571)   | &check;   | &check;   | &check;   | &cross;   | No    |
@@ -42,7 +42,7 @@
 
 ### Finetune experimental results ($\lambda_{mask} = 0.1$)
 
-| Setting | regress loss weight (l2) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1 (0.1177)    | 0.1 (-0.7140) | Gaussian  0.01 (4.9129)   |           |           |           |           | No    |
 | 8 channels    | 1 (0.0303)    | 0.1 (-0.6966) | Gaussian  0.05 (2.1743)   | &check;   | &check;   | &check;   | &check;   | Yes   |
@@ -63,7 +63,7 @@
 
 ### Finetune experimental results ($\lambda_{mask} = 0.05$)
 
-| Setting | regress loss weight (l2) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1 (0.0370)    | 0.05 (-0.7097)    | Gaussian  0.01 (3.0875)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 8 channels    | 1 (0.0365)    | 0.05 (-0.6197)    | Gaussian  0.05 (2.6919)   | &check;   | &check;   | &check;   | &check;   | Yes   |
@@ -84,7 +84,7 @@
 
 ### Finetune experimental results ($\lambda_{mask} = 0.01$)
 
-| Setting | regress loss weight (l2) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1 (0.0471)    | 0.01 (-0.5769)    | Gaussian  0.01 (2.9437)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 8 channels    | 1 (0.0243)    | 0.01 (-0.4585)    | Gaussian  0.05 (0.8756)   | &check;   | &check;   | &check;   | &check;   | Yes   |
@@ -105,7 +105,7 @@
 
 ### Pre-training experimental results by using l1 regression loss
 
-| Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1 (0.0168)    | 0.01 (-0.6171)    | --- (0.7625)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 8 channels    | 1 (0.1059)    | 0.05 (-0.7199)    | --- (54.7341) |           |           |           |           | No    |
@@ -118,7 +118,7 @@
 
 ### Finetune experimental results ($\lambda_{mask} = 0.5$)
 
-| Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 6 channels    | 1             | 0.5           | Gaussian  0.01            |           |           |           |           | Done  |
 | 6 channels    | 1             | 0.5           | Gaussian  0.05            |           |           |           |           | Done  |
@@ -131,7 +131,7 @@
 
 ### Finetune experimental results ($\lambda_{mask} = 0.1$)
 
-| Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 6 channels    | 1             | 0.1           | Gaussian  0.01            |           |           |           |           | Done      |
 | 6 channels    | 1             | 0.1           | Gaussian  0.05            |           |           |           |           | Done      |
@@ -144,7 +144,7 @@
 
 ### Finetune experimental results ($\lambda_{mask} = 0.01$)
 
-| Setting | regress loss weight (l1) | mask loss weight | uncer loss weight | mask | x | y | z | States |
+| Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1             | 0.01          | Gaussian  0.01            |           |           |           |           | Running   |
 | 8 channels    | 1             | 0.01          | Gaussian  0.05            |           |           |           |           | Running   |
