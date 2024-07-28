@@ -148,8 +148,8 @@
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1             | 0.01          | Gaussian  0.01            |           |           |           |           | Done      |
 | 8 channels    | 1             | 0.01          | Gaussian  0.05            |           |           |           |           | Done      |
-| 8 channels    | 1             | 0.01          | Gaussian  0.1             |           |           |           |           | To run    |
-| 8 channels    | 1             | 0.01          | Gaussian  0.5             |           |           |           |           | To run    |
+| 8 channels    | 1             | 0.01          | Gaussian  0.1             |           |           |           |           | Running   |
+| 8 channels    | 1             | 0.01          | Gaussian  0.5             |           |           |           |           | Running   |
 | 8 channels    | 1             | 0.01          | Laplacian 0.01            |           |           |           |           | Done      |
 | 8 channels    | 1             | 0.01          | Laplacian 0.05            |           |           |           |           | Done      |
 | 8 channels    | 1             | 0.01          | Laplacian 0.1             |           |           |           |           | Done      |
