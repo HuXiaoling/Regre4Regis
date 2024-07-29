@@ -25,9 +25,9 @@
 
 | Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1 (0.1088)    | 0.5 (-0.7209) | Gaussian  0.1  (2.9452)   | &check;   | &check;   | &check;   | &cross;   | No    |
-| 8 channels    | 1 (0.1081)    | 0.5 (-0.7045) | Gaussian  0.5  (2.9571)   | &check;   | &check;   | &check;   | &cross;   | No    |
-| 8 channels    | 1 (0.2966)    | 0.5 (-0.7280) | Laplacian 0.01 (22.3965)  | &cross;   | &cross;   | &cross;   | &check;   | No    |
+| 8 channels    | 1 (0.1088)    | 0.5 (-0.7209) | Gaussian  0.1  (2.9452)   | &check;   | &check;   | &check;   |           | No    |
+| 8 channels    | 1 (0.1081)    | 0.5 (-0.7045) | Gaussian  0.5  (2.9571)   | &check;   | &check;   | &check;   |           | No    |
+| 8 channels    | 1 (0.2966)    | 0.5 (-0.7280) | Laplacian 0.01 (22.3965)  |           |           |           | &check;   | No    |
 | 8 channels    | 1 (0.0244)    | 0.5 (-0.7107) | Laplacian 0.05 (1.2930)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 8 channels    | 1 (0.0248)    | 0.5 (-0.6961) | Laplacian 0.1  (1.1233)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 8 channels    | 1 (0.0227)    | 0.5 (-0.5428) | Laplacian 0.5  (0.8866)   | &check;   | &check;   | &check;   | &check;   | Yes   |
@@ -120,40 +120,40 @@
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 6 channels    | 1             | 0.5           | Gaussian  0.01            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.5           | Gaussian  0.05            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.5           | Gaussian  0.1             |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.5           | Gaussian  0.5             |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.5           | Laplacian 0.01            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.5           | Laplacian 0.05            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.5           | Laplacian 0.1             |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.5           | Laplacian 0.5             |           |           |           |           | Done  |
+| 6 channels    | 1 (0.0674)    | 0.5 (-0.7313) | Gaussian  0.01 (1.6465)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0592)    | 0.5 (-0.7298) | Gaussian  0.05 (1.1923)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0602)    | 0.5 (-0.7234) | Gaussian  0.1  (1.1049)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0367)    | 0.5 (-0.6771) | Gaussian  0.5  (1.0768)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0471)    | 0.5 (-0.7314) | Laplacian 0.01 (2.1758)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0442)    | 0.5 (-0.7289) | Laplacian 0.05 (1.5562)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0272)    | 0.5 (-0.7222) | Laplacian 0.1  (1.1024)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0255)    | 0.5 (-0.6958) | Laplacian 0.5  (1.0686)   | &check;   | &check;   | &check;   | &check;   | yes   |
 
 #### Finetune experimental results ($\lambda_{mask} = 0.1$)
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 6 channels    | 1             | 0.1           | Gaussian  0.01            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.1           | Gaussian  0.05            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.1           | Gaussian  0.1             |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.1           | Gaussian  0.5             |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.1           | Laplacian 0.01            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.1           | Laplacian 0.05            |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.1           | Laplacian 0.1             |           |           |           |           | Done  |
-| 6 channels    | 1             | 0.1           | Laplacian 0.5             |           |           |           |           | Done  |
+| 6 channels    | 1 (0.0259)    | 0.1 (-0.7160) | Gaussian  0.01 (1.0434)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0237)    | 0.1 (-0.7106) | Gaussian  0.05 (0.7888)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0260)    | 0.1 (-0.6655) | Gaussian  0.1  (0.9351)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0292)    | 0.1 (-0.4767) | Gaussian  0.5  (0.9934)   | &check;   | &check;   | &check;   |           | no    |
+| 6 channels    | 1 (0.0218)    | 0.1 (-0.7222) | Laplacian 0.01 (1.0243)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0236)    | 0.1 (-0.7013) | Laplacian 0.05 (0.8906)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0237)    | 0.1 (-0.6962) | Laplacian 0.1  (0.9584)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0215)    | 0.1 (-0.6579) | Laplacian 0.5  (0.7976)   | &check;   | &check;   | &check;   | &check;   | yes   |
 
 #### Finetune experimental results ($\lambda_{mask} = 0.01$)
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1             | 0.01          | Gaussian  0.01            |           |           |           |           | Done  |
-| 8 channels    | 1             | 0.01          | Gaussian  0.05            |           |           |           |           | Done  |
-| 8 channels    | 1             | 0.01          | Gaussian  0.1             |           |           |           |           | Done  |
-| 8 channels    | 1             | 0.01          | Gaussian  0.5             |           |           |           |           | Done  |
-| 8 channels    | 1             | 0.01          | Laplacian 0.01            |           |           |           |           | Done  |
-| 8 channels    | 1             | 0.01          | Laplacian 0.05            |           |           |           |           | Done  |
-| 8 channels    | 1             | 0.01          | Laplacian 0.1             |           |           |           |           | Done  |
-| 8 channels    | 1             | 0.01          | Laplacian 0.5             |           |           |           |           | Done  |
+| 8 channels    | 1 (0.0232)    | 0.01 (-0.6151)    | Gaussian  0.01 (0.7764)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 8 channels    | 1 (0.0261)    | 0.01 (-0.4961)    | Gaussian  0.05 (0.9828)   | &check;   | &check;   | &check;   |           | no    |
+| 8 channels    | 1 (0.0210)    | 0.01 (-0.4080)    | Gaussian  0.1  (0.6204)   | &check;   | &check;   | &check;   |           | no    |
+| 8 channels    | 1 (0.0226)    | 0.01 (-0.0721)    | Gaussian  0.5  (0.7397)   | &check;   | &check;   | &check;   |           | no    |
+| 8 channels    | 1 (0.0207)    | 0.01 (-0.6176)    | Laplacian 0.01 (0.7567)   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 8 channels    | 1 (0.0258)    | 0.01 (-0.5117)    | Laplacian 0.05 (1.2250)   | &check;   | &check;   | &check;   |           | no    |
+| 8 channels    | 1 (0.0242)    | 0.01 (-0.4279)    | Laplacian 0.1  (1.1487)   | &check;   | &check;   | &check;   |           | no    |
+| 8 channels    | 1 (0.0257)    | 0.01 (-0.3149)    | Laplacian 0.5  (1.1498)   | &check;   | &check;   | &check;   |           | no    |
 
 ### End2end experimental results
 
@@ -161,27 +161,27 @@
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Done  |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Done  |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Done  |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Done  |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Done  |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Done  |
+| 8 channels    | 1 (0.0180)    | 0.5 (-0.7156) | Laplacian 0.05 (0.4223)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 8 channels    | 1 (0.0171)    | 0.5 (-0.7084) | Laplacian 0.05 (0.2579)   | 1     | &check;   | &check;   | &check;   | &check;   | yes   |
+| 8 channels    | 1 (0.0200)    | 0.5 (-0.7155) | Laplacian 0.05 (0.7480)   | 2     | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0212)    | 0.5 (-0.7245) | Laplacian 0.05 (0.8077)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0205)    | 0.5 (-0.7267) | Laplacian 0.05 (0.8076)   | 1     | &check;   | &check;   | &check;   | &check;   | yes   |
+| 6 channels    | 1 (0.0218)    | 0.5 (-0.7262) | Laplacian 0.05 (0.8376)   | 2     | &check;   | &check;   | &check;   | &check;   | yes   |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Done      |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Done      |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Done      |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 5     |  |  |  |  | Running   |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 10    |  |  |  |  | Running   |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 0.5   |  |  |  |  | Done      |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Done      |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Done      |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 5     |  |  |  |  | Running   |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 10    |  |  |  |  | Running   |
+| 8 channels    | 1 (0.0203)    | 0.5 (-0.7095) | Laplacian 0.05 (0.7595)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes       |
+| 8 channels    | 1 (0.0196)    | 0.5 (-0.7141) | Laplacian 0.05 (0.6101)   | 1     | &check;   | &check;   | &check;   | &check;   | yes       |
+| 8 channels    | 1 (0.0214)    | 0.5 (-0.7103) | Laplacian 0.05 (0.9125)   | 2     | &check;   | &check;   | &check;   | &check;   | yes       |
+| 8 channels    | 1             | 0.5           | Laplacian 0.05            | 5     |           |           |           |           | Running   |
+| 8 channels    | 1             | 0.5           | Laplacian 0.05            | 10    |           |           |           |           | Running   |
+| 6 channels    | 1 (0.0193)    | 0.5 (-0.7247) | Laplacian 0.05 (0.7269)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes       |
+| 6 channels    | 1 (0.0199)    | 0.5 (-0.7246) | Laplacian 0.05 (0.7567)   | 1     | &check;   | &check;   | &check;   | &check;   | yes       |
+| 6 channels    | 1 (0.0192)    | 0.5 (-0.7250) | Laplacian 0.05 (0.7195)   | 2     | &check;   | &check;   | &check;   | &check;   | yes       |
+| 6 channels    | 1             | 0.5           | Laplacian 0.05            | 5     |           |           |           |           | Running   |
+| 6 channels    | 1             | 0.5           | Laplacian 0.05            | 10    |           |           |           |           | Running   |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{mask} = 0.01$
 
