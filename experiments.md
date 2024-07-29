@@ -1,14 +1,14 @@
-# Regression for registration and the uncertainty
+## Regression for registration and the uncertainty
 
-## Two-stage experimental results
+### Two-stage experimental results
 
-### Pre-training experimental results without uncertainty branch
+#### Pre-training experimental results without uncertainty branch
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 |   5 channels  | 1 (0.0147)    | 0.5 (-0.7352) | ---   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-### Pre-training experimental results by using l2 regression loss
+#### Pre-training experimental results by using l2 regression loss
 
 | Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -21,7 +21,7 @@
 | 6 channels    | 1 (0.0235)    | 0.1  (-0.7237)    | --- (1.1944)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.0298)    | 0.5  (-0.7256)    | --- (1.4838)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-### Finetune experimental results ($\lambda_{mask} = 0.5$)
+#### Finetune experimental results ($\lambda_{mask} = 0.5$)
 
 | Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -40,7 +40,7 @@
 | 6 channels    | 1 (0.0246)    | 0.5 (-0.7174) | Laplacian 0.1  (0.9362)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.0243)    | 0.5 (-0.6252) | Laplacian 0.5  (0.9320)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-### Finetune experimental results ($\lambda_{mask} = 0.1$)
+#### Finetune experimental results ($\lambda_{mask} = 0.1$)
 
 | Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -61,7 +61,7 @@
 | 6 channels    | 1 (0.0308)    | 0.1 (-0.6987) | Laplacian 0.1  (1.2880)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.1255)    | 0.1 (-0.7056) | Laplacian 0.5  (5.1822)   |           |           |           |           | No    |
 
-### Finetune experimental results ($\lambda_{mask} = 0.05$)
+#### Finetune experimental results ($\lambda_{mask} = 0.05$)
 
 | Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -82,7 +82,7 @@
 | 6 channels    | 1 (0.2083)    | 0.05 (-0.6752)    | Laplacian 0.1  (6.7715)   |           |           |           |           | No    |
 | 6 channels    | 1 (0.0261)    | 0.05 (-0.6091)    | Laplacian 0.5  (1.7034)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
-### Finetune experimental results ($\lambda_{mask} = 0.01$)
+#### Finetune experimental results ($\lambda_{mask} = 0.01$)
 
 | Setting | regress loss (l2) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -103,7 +103,7 @@
 | 6 channels    | 1 (0.1205)    | 0.01 (-0.6810)    | Laplacian 0.1  (4.2078)   |           |           |           |           | No    |
 | 6 channels    | 1 (0.1129)    | 0.01 (-0.5902)    | Laplacian 0.5  (5.1991)   |           |           |           |           | No    |
 
-### Pre-training experimental results by using l1 regression loss
+#### Pre-training experimental results by using l1 regression loss
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -116,7 +116,7 @@
 | 6 channels    | 1 (0.0156)    | 0.1  (-0.7227)    | --- (0.6635)  | &check;   | &check;   | &check;   | &check;   | Yes   |
 | 6 channels    | 1 (0.0276)    | 0.5  (-0.7320)    | --- (2.0480)  | &check;   | &check;   | &check;   | &check;   | yes   |
 
-### Finetune experimental results ($\lambda_{mask} = 0.5$)
+#### Finetune experimental results ($\lambda_{mask} = 0.5$)
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -129,7 +129,7 @@
 | 6 channels    | 1             | 0.5           | Laplacian 0.1             |           |           |           |           | Done  |
 | 6 channels    | 1             | 0.5           | Laplacian 0.5             |           |           |           |           | Done  |
 
-### Finetune experimental results ($\lambda_{mask} = 0.1$)
+#### Finetune experimental results ($\lambda_{mask} = 0.1$)
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -142,7 +142,7 @@
 | 6 channels    | 1             | 0.1           | Laplacian 0.1             |           |           |           |           | Done  |
 | 6 channels    | 1             | 0.1           | Laplacian 0.5             |           |           |           |           | Done  |
 
-### Finetune experimental results ($\lambda_{mask} = 0.01$)
+#### Finetune experimental results ($\lambda_{mask} = 0.01$)
 
 | Setting | regress loss (l1) | mask loss | uncer loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -155,9 +155,9 @@
 | 8 channels    | 1             | 0.01          | Laplacian 0.1             |           |           |           |           | Done  |
 | 8 channels    | 1             | 0.01          | Laplacian 0.5             |           |           |           |           | Done  |
 
-## End2end experimental results
+### End2end experimental results
 
-### Finetune experimental results with linear deformation (least square)
+#### Finetune experimental results with linear deformation (least square)
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -168,7 +168,7 @@
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 1     |  |  |  |  | Done  |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2     |  |  |  |  | Done  |
 
-### Finetune experimental results with both linear (least square) and non-linear (demon) deformations
+#### Finetune experimental results with both linear (least square) and non-linear (demon) deformations
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -183,7 +183,7 @@
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 5     |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 10    |  |  |  |  | Running   |
 
-### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{mask} = 0.01$
+#### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{mask} = 0.01$
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
