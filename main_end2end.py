@@ -319,6 +319,7 @@ def train_func(mydict):
                 validation_iterator = iter(validation_generator)
                 avg_val_loss = 0.0
                 mask_dice = 0.0
+                seg_dice = 0.0
                 for validation_step in range(len(validation_generator)):
                     print("Validation Step {}.".format(validation_step))
                     x, mask, y_gt, seg, affine = next(validation_iterator)
@@ -342,6 +343,7 @@ def train_func(mydict):
                     DEFseg = DEFseg.round()
                     deform_seg_onehot = differentiable_one_hot(DEFseg, n_labels)
                     seg_loss = dice_loss(seg_onehot, deform_seg_onehot)
+                    seg_dice += 1 - seg_loss
 
                     if mydict['uncer'] == 'gaussian':
                         uncer_loss = uncer_loss_three_gaussian(y_pred, y_gt, mask)
@@ -359,10 +361,12 @@ def train_func(mydict):
 
                 mask_dice = -mask_dice # because SoftDice returns negative dice
                 mask_dice /= len(validation_generator)
+                seg_dice /= len(validation_generator)
                 avg_val_loss /= len(validation_generator)
             validation_end_time = time()
             writer.add_scalar('Loss/val', avg_val_loss, step + epoch * num_batches)
             writer.add_scalar('Dice/val', mask_dice, step + epoch * num_batches)
+            writer.add_scalar('Seg_Dice/val', seg_dice, step + epoch * num_batches)
             print("End of epoch validation took {} seconds.\nAverage validation loss: {}.\nAverage dice: {}"
                   .format(validation_end_time - validation_start_time, avg_val_loss, mask_dice))
 
