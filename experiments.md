@@ -161,33 +161,35 @@
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1 (0.0180)    | 0.5 (-0.7156) | Laplacian 0.05 (0.4223)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes   |
-| 8 channels    | 1 (0.0171)    | 0.5 (-0.7084) | Laplacian 0.05 (0.2579)   | 1     | &check;   | &check;   | &check;   | &check;   | yes   |
-| 8 channels    | 1 (0.0200)    | 0.5 (-0.7155) | Laplacian 0.05 (0.7480)   | 2     | &check;   | &check;   | &check;   | &check;   | yes   |
-| 6 channels    | 1 (0.0212)    | 0.5 (-0.7245) | Laplacian 0.05 (0.8077)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes   |
-| 6 channels    | 1 (0.0205)    | 0.5 (-0.7267) | Laplacian 0.05 (0.8076)   | 1     | &check;   | &check;   | &check;   | &check;   | yes   |
-| 6 channels    | 1 (0.0218)    | 0.5 (-0.7262) | Laplacian 0.05 (0.8376)   | 2     | &check;   | &check;   | &check;   | &check;   | yes   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 0.5   |   |   |   |   |   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 1     |   |   |   |   |   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   |   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 0.5   |   |   |   |   |   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 1     |   |   |   |   |   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   |   |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1 (0.0203)    | 0.5 (-0.7095) | Laplacian 0.05 (0.7595)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes       |
-| 8 channels    | 1 (0.0196)    | 0.5 (-0.7141) | Laplacian 0.05 (0.6101)   | 1     | &check;   | &check;   | &check;   | &check;   | yes       |
-| 8 channels    | 1 (0.0214)    | 0.5 (-0.7103) | Laplacian 0.05 (0.9125)   | 2     | &check;   | &check;   | &check;   | &check;   | yes       |
-| 8 channels    | 1             | 0.5           | Laplacian 0.05            | 5     |           |           |           |           | Running   |
-| 8 channels    | 1             | 0.5           | Laplacian 0.05            | 10    |           |           |           |           | Running   |
-| 6 channels    | 1 (0.0193)    | 0.5 (-0.7247) | Laplacian 0.05 (0.7269)   | 0.5   | &check;   | &check;   | &check;   | &check;   | yes       |
-| 6 channels    | 1 (0.0199)    | 0.5 (-0.7246) | Laplacian 0.05 (0.7567)   | 1     | &check;   | &check;   | &check;   | &check;   | yes       |
-| 6 channels    | 1 (0.0192)    | 0.5 (-0.7250) | Laplacian 0.05 (0.7195)   | 2     | &check;   | &check;   | &check;   | &check;   | yes       |
-| 6 channels    | 1             | 0.5           | Laplacian 0.05            | 5     |           |           |           |           | Running   |
-| 6 channels    | 1             | 0.5           | Laplacian 0.05            | 10    |           |           |           |           | Running   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 1     |   |   |   |   |   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   |   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   |   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   |   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 1     |   |   |   |   |   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   |   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   |   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   |   |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{mask} = 0.01$
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| 8 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Running   |
+| 8 channels    | 1    | 0.5 | Laplacian 0.1   | 2      |  |  |  |  | Running   |
 | 8 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
 | 8 channels    | 1    | 0.5 | Laplacian 0.1   | 10     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 2      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 10     |  |  |  |  | Running   |

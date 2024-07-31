@@ -246,25 +246,6 @@ def onehot_encoding(seg, onehotmatrix, lut):
 
     return seg_onehot
 
-def differentiable_one_hot(labels, num_classes):
-    # Ensure the labels are float for differentiable operations
-    labels = labels.float()
-    
-    # Create a range of class indices
-    class_range = torch.arange(num_classes).float().to(labels.device)
-    
-    # Expand dimensions of class_range to match labels for broadcasting
-    for _ in range(labels.dim()):
-        class_range = class_range.unsqueeze(0)
-
-    # Compute one-hot encoding using softmax-like operations
-    # Create a large negative value for numerical stability in softmax
-    large_negative = -1000.0
-    one_hot_labels = torch.nn.functional.softmax(large_negative * torch.abs(labels.unsqueeze(-1) - class_range), dim=-1)
-    one_hot_labels = one_hot_labels[:,0,:,].permute(0, 4, 1, 2, 3)
-    
-    return one_hot_labels
-
 def uncer_loss_single_gaussian(y_pred, y_gt, mask):
     uncer_loss = 0.5 * torch.mean(y_pred[:,3,] * mask + (y_pred[:,0,] * mask - y_gt[:,0,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \
                                                         (y_pred[:,1,] * mask - y_gt[:,1,:] * mask) ** 2/(1e-3 * torch.exp(y_pred[:,3,])) + \

@@ -133,7 +133,7 @@ def gaussian_blur_3d(input, stds, device):
         blurred = conv3d(blurred, kz[None, None, None, None, :], stride=1, padding=(0, 0, len(kz) // 2))
     return torch.squeeze(blurred)
 
-def least_square_fitting(pred, aff2, MNI, MNISeg, nonlin=False):
+def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
  
     pred = 100 * pred
     pred_mni = pred.permute([1, 2, 3, 0])
@@ -142,7 +142,6 @@ def least_square_fitting(pred, aff2, MNI, MNISeg, nonlin=False):
     M = torch.tensor(binary_fill_holes((y_pred_binary > 0.5).detach().cpu().numpy()), device='cuda', dtype=torch.bool)
 
     A = np.linalg.inv(aff2)
-    MNI = torch.tensor(MNI, device='cuda', dtype=torch.float32)
     A = torch.tensor(A, device='cuda', dtype=torch.float32)
     xx = pred_mni[:, :, :, 0][M]
     yy = pred_mni[:, :, :, 1][M]
@@ -161,6 +160,7 @@ def least_square_fitting(pred, aff2, MNI, MNISeg, nonlin=False):
     o = torch.ones_like(k)
     B = torch.stack([i, j, k, o], dim=1)
 
+    # P = inv(B^T * B) * B^T
     P = torch.linalg.pinv(B)
     fit_x = P @ ii
     fit_y = P @ jj
@@ -216,7 +216,7 @@ def least_square_fitting(pred, aff2, MNI, MNISeg, nonlin=False):
         kk2demon = kk2aff + new_kdef
 
         valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
-        DEFseg = torch.zeros_like(pred_mni[..., 0])
+        DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
         DEFseg[M] = valsDemon_seg
     else:
         # valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
@@ -224,7 +224,7 @@ def least_square_fitting(pred, aff2, MNI, MNISeg, nonlin=False):
         # DEFimg[M] = valsAff
 
         valsAff_seg = fast_3D_interp_torch(MNISeg, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
-        DEFseg = torch.zeros_like(pred_mni[..., 0])
+        DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
         DEFseg[M] = valsAff_seg
 
     return DEFseg
@@ -273,10 +273,8 @@ if __name__ == "__main__":
     MNISeg = MNISeg[None, None, ...]
     seg_onehot = onehot_encoding(MNISeg, onehotmatrix, lut)
     MNISeg = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int).squeeze()
-    
-    MNI, aff2 = MRIread('fitting/mni.nii.gz')
 
-    DEFseg = least_square_fitting(pred[0, channels_to_select, :], aff2, MNI, MNISeg)
+    DEFseg = least_square_fitting(pred[0, channels_to_select, :], Maff2, MNISeg)
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 
