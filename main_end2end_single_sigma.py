@@ -21,7 +21,7 @@ from cornucopia import (
 from dataloader_aug_cc import regress
 from unet.unet_3d import UNet_3d
 from utilities import SoftDiceLoss, softmax_helper, dice_loss, onehot_encoding
-from utilities import uncer_loss_three_gaussian, uncer_loss_three_lap
+from utilities import uncer_loss_single_gaussian, uncer_loss_single_lap
 import torch
 import pdb
 import torch.nn as nn
@@ -98,7 +98,7 @@ def train_func(mydict):
 
     # Network
     # network = UNet_3d(n_channels=3, n_classes=mydict['num_classes']).to(device)
-    network = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to(device)
+    network = UNet_3d(in_dim=1, out_dim=6, num_filters=4).to(device)
     # network = torch.nn.DataParallel(network, device_ids=range(torch.cuda.device_count()))
 
     # Optimizer
@@ -218,23 +218,23 @@ def train_func(mydict):
             x = transform_intensity(x)
             x, mask, y_gt, seg = transform_spatial(x, mask, y_gt, seg)
             mask = mask.type(torch.cuda.FloatTensor)
-            seg = seg.type(torch.cuda.FloatTensor)
+            seg = seg.type(torch.cuda.FloatTensor) 
 
             # one hot encoding
-            seg_onehot = onehot_encoding(seg, onehotmatrix, lut) 
+            seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
 
             DEFseg = torch.empty_like(seg_onehot)
             with torch.autocast(device_type='cuda', dtype=torch.float16):
                 y_pred = network(x)
                 for i in range(x.shape[0]):
-                    channels_to_select = [0, 1, 2, 6, 7]
+                    channels_to_select = [0, 1, 2, 4, 5]
                     DEFseg[i,:] = least_square_fitting(y_pred[i, channels_to_select, :].to(dtype=torch.float), Maff2, MNISeg_onehot.squeeze().permute(1, 2, 3, 0), 
                                                        nonlin=mydict['nonlin']).permute(3, 0, 1, 2)
 
                 y_gt = y_gt * mask
                 seg_onehot = seg_onehot * mask
                 DEFseg = DEFseg * mask
-                      
+
                 # test dataloader_aug_cc.py
                 # new_image = nib.Nifti1Image(x[0,0,:,:,:].cpu().detach().numpy(), affine=affine[0])
                 # new_image.to_filename('samples/aug_image.nii.gz')
@@ -256,35 +256,35 @@ def train_func(mydict):
                 # deform_new_seg.to_filename('samples/deform_aug_seg.nii.gz')
                 # import pdb; pdb.set_trace()
 
-                mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                mask_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
                 writer.add_scalar('Loss/train_mask', mask_loss, step + epoch * num_batches)
 
                 if mydict['mode'] == 'pre': 
                     if mydict['regress_loss'] == 'l1':
-                        print("We are using L1 loss for regression with three channels!")
+                        print("We are using L1 loss for regression with single channel!")
                         regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt) / (1e-6 + torch.mean(mask))
                         writer.add_scalar('Loss/train_regress', regress_loss, step + epoch * num_batches)
                     else:
-                        print("We are using L2 loss for regression with three channels!")
+                        print("We are using L2 loss for regression with single channel!")
                         regress_loss = l2_loss(y_pred[:,0:3,] * mask, y_gt) / (1e-6 + torch.mean(mask))
                         writer.add_scalar('Loss/train_regress', regress_loss, step + epoch * num_batches)
 
                     train_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
                 else:
                     if mydict['uncer'] == 'gaussian':
-                        print("We are using Gaussian distribution to model uncertainty for three sigmas!")
+                        print("We are using Gaussian distribution to model uncertainty for single sigma!")
                         
-                        uncer_loss = uncer_loss_three_gaussian(y_pred * mask, y_gt, mask)
+                        uncer_loss = uncer_loss_single_gaussian(y_pred * mask, y_gt, mask)    
                         seg_loss = dice_loss(seg_onehot, DEFseg)
                         writer.add_scalar('Loss/train_uncer', uncer_loss, step + epoch * num_batches)
                         writer.add_scalar('Loss/train_seg', seg_loss, step + epoch * num_batches)
- 
+
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
                     else:
-                        print("We are using Laplacian distribution to model uncertainty for three sigmas!")
+                        print("We are using Laplacian distribution to model uncertainty for single sigma!")
 
-                        uncer_loss = uncer_loss_three_lap(y_pred * mask, y_gt, mask)
+                        uncer_loss = uncer_loss_single_lap(y_pred * mask, y_gt, mask)
                         seg_loss = dice_loss(seg_onehot, DEFseg)
                         writer.add_scalar('Loss/train_uncer', uncer_loss, step + epoch * num_batches)
                         writer.add_scalar('Loss/train_seg', seg_loss, step + epoch * num_batches)
@@ -332,27 +332,27 @@ def train_func(mydict):
                     y_pred = network(x)
                     
                     regress_loss = l1_loss(y_pred[:,0:3,] * mask, y_gt) / (1e-6 + torch.mean(mask))
-                    mask_loss = 0.75 * sdl(y_pred[:,6:8,:], mask) + 0.25 * ce_loss(y_pred[:,6:8,:], mask[:,0,:].type(torch.LongTensor).to(device))
+                    mask_loss = 0.75 * sdl(y_pred[:,4:6,:], mask) + 0.25 * ce_loss(y_pred[:,4:6,:], mask[:,0,:].type(torch.LongTensor).to(device))
 
                     # one hot encoding
                     seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
                     DEFseg = torch.empty_like(seg_onehot)
-                    channels_to_select = [0, 1, 2, 6, 7]
+                    channels_to_select = [0, 1, 2, 4, 5]
                     DEFseg[0,:] = least_square_fitting(y_pred[0, channels_to_select, :].to(dtype=torch.float), Maff2, MNISeg_onehot.squeeze().permute(1, 2, 3, 0), 
                                                        nonlin=mydict['nonlin']).permute(3, 0, 1, 2)
-                    
+
                     y_gt = y_gt * mask
                     seg_onehot = seg_onehot * mask
                     DEFseg = DEFseg * mask
-                    
+
                     seg_loss = dice_loss(seg_onehot, DEFseg)
                     seg_dice += 1 - seg_loss
 
                     if mydict['uncer'] == 'gaussian':
-                        uncer_loss = uncer_loss_three_gaussian(y_pred * mask, y_gt, mask)
+                        uncer_loss = uncer_loss_single_gaussian(y_pred * mask, y_gt, mask)
                         
                     else:
-                        uncer_loss = uncer_loss_three_lap(y_pred * mask, y_gt, mask)
+                        uncer_loss = uncer_loss_single_lap(y_pred * mask, y_gt, mask)
 
                     if mydict['mode'] == 'pre':
                         val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss
@@ -360,7 +360,7 @@ def train_func(mydict):
                         val_loss = regress_loss + mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
                     avg_val_loss += val_loss
-                    mask_dice += sdl(y_pred[:,6:8,:], mask)
+                    mask_dice += sdl(y_pred[:,4:6,:], mask)
 
                 mask_dice = -mask_dice # because SoftDice returns negative dice
                 mask_dice /= len(validation_generator)
