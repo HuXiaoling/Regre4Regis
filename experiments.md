@@ -192,4 +192,4 @@
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 0.5    |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 2      |  |  |  |  | Running   |
-| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | To re-run |
