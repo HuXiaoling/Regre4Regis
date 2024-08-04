@@ -168,7 +168,7 @@
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 1     |   |   |   |   |   |
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   |   |
 
-#### Finetune experimental results with both linear (least square) and non-linear (demon) deformations
+#### Finetune experimental results with both linear (least square) and non-linear (demon) deformation for $\lambda_{uncer} = 0.05s
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -181,7 +181,7 @@
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   |   |
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   |   |
 
-#### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{mask} = 0.01$
+#### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{uncer} = 0.1$
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -192,4 +192,4 @@
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 0.5    |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 2      |  |  |  |  | Running   |
-| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | To re-run |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
