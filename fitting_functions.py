@@ -171,29 +171,29 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     # fit_z = P @ kk
 
     if pred_mni.shape[3] == 6:
-        sigma = torch.exp((pred_mni[:, :, :, 3]/100)[M])
+        sigma_coor = torch.exp((pred_mni[:, :, :, 3]/100)[M])
         
-        P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(sigma, 1) * B))) @ torch.transpose(B, 0, 1)
-        fit_x = P @ (sigma * ii)
-        fit_y = P @ (sigma * jj)
-        fit_z = P @ (sigma * kk)
+        P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(sigma_coor, 1) * B))) @ torch.transpose(B, 0, 1)
+        fit_x = P @ (sigma_coor * ii)
+        fit_y = P @ (sigma_coor * jj)
+        fit_z = P @ (sigma_coor * kk)
 
-        # sigma_sqrt = torch.sqrt(sigma)
-        # B_weighted = B * sigma_sqrt.unsqueeze(dim=1)
+        # sigma_coor_sqrt = torch.sqrt(sigma_coor)
+        # B_weighted = B * sigma_coor_sqrt.unsqueeze(dim=1)
         # P = torch.linalg.inv((torch.transpose(B_weighted, 0 ,1) @ B_weighted)) @ torch.transpose(B_weighted, 0, 1) 
 
-        # fit_x = P @ (sigma_sqrt * ii)
-        # fit_y = P @ (sigma_sqrt * jj)
-        # fit_z = P @ (sigma_sqrt * kk)
+        # fit_x = P @ (sigma_coor_sqrt * ii)
+        # fit_y = P @ (sigma_coor_sqrt * jj)
+        # fit_z = P @ (sigma_coor_sqrt * kk)
     else:
-        sigma = torch.exp((pred_mni[:, :, :, 3:6]/100)[M])
-        sigma_sqrt = torch.sqrt(sigma)
-        B_weighted = B * torch.cat((sigma_sqrt, torch.unsqueeze(o, dim=1)), dim=1)
+        sigma_coor = torch.exp((pred_mni[:, :, :, 3:6]/100)[M])
+        sigma_coor_sqrt = torch.sqrt(sigma_coor)
+        B_weighted = B * torch.cat((sigma_coor_sqrt, torch.unsqueeze(o, dim=1)), dim=1)
         P = torch.linalg.inv((torch.transpose(B_weighted, 0 ,1) @ B_weighted)) @ torch.transpose(B_weighted, 0, 1)
 
-        fit_x = P @ (sigma_sqrt[:,0] * ii)
-        fit_y = P @ (sigma_sqrt[:,1] * jj)
-        fit_z = P @ (sigma_sqrt[:,2] * kk)
+        fit_x = P @ (sigma_coor_sqrt[:,0] * ii)
+        fit_y = P @ (sigma_coor_sqrt[:,1] * jj)
+        fit_z = P @ (sigma_coor_sqrt[:,2] * kk)
 
     ii2aff = B @ fit_x
     jj2aff = B @ fit_y
