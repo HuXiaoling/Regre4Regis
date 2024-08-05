@@ -10,6 +10,7 @@ import nibabel as nib
 from dataloader_aug_cc import regress
 from torch.utils import data
 import torch.nn.functional as F
+from utilities import onehot_encoding
 
 def MRIread(filename, dtype=None, im_only=False):
 
@@ -137,8 +138,11 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
  
     pred = 100 * pred
     pred_mni = pred.permute([1, 2, 3, 0])
+    if pred_mni.shape[3] == 6:
+        y_pred_binary = torch.argmax(pred_mni[...,4:6], dim=-1)
+    else:
+        y_pred_binary = torch.argmax(pred_mni[...,6:8], dim=-1)
 
-    y_pred_binary = torch.argmax(pred_mni[...,3:5], dim=-1)
     M = torch.tensor(binary_fill_holes((y_pred_binary > 0.5).detach().cpu().numpy()), device='cuda', dtype=torch.bool)
 
     A = np.linalg.inv(aff2)
@@ -161,10 +165,36 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     B = torch.stack([i, j, k, o], dim=1)
 
     # P = inv(B^T * B) * B^T
-    P = torch.linalg.pinv(B)
-    fit_x = P @ ii
-    fit_y = P @ jj
-    fit_z = P @ kk
+    # P = torch.linalg.pinv(B)
+    # fit_x = P @ ii
+    # fit_y = P @ jj
+    # fit_z = P @ kk
+
+    if pred_mni.shape[3] == 6:
+        sigma = torch.exp((pred_mni[:, :, :, 3]/100)[M])
+        
+        P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(sigma, 1) * B))) @ torch.transpose(B, 0, 1)
+        fit_x = P @ (sigma * ii)
+        fit_y = P @ (sigma * jj)
+        fit_z = P @ (sigma * kk)
+
+        # sigma_sqrt = torch.sqrt(sigma)
+        # B_weighted = B * sigma_sqrt.unsqueeze(dim=1)
+        # P = torch.linalg.inv((torch.transpose(B_weighted, 0 ,1) @ B_weighted)) @ torch.transpose(B_weighted, 0, 1) 
+
+        # fit_x = P @ (sigma_sqrt * ii)
+        # fit_y = P @ (sigma_sqrt * jj)
+        # fit_z = P @ (sigma_sqrt * kk)
+    else:
+        sigma = torch.exp((pred_mni[:, :, :, 3:6]/100)[M])
+        sigma_sqrt = torch.sqrt(sigma)
+        B_weighted = B * torch.cat((sigma_sqrt, torch.unsqueeze(o, dim=1)), dim=1)
+        P = torch.linalg.inv((torch.transpose(B_weighted, 0 ,1) @ B_weighted)) @ torch.transpose(B_weighted, 0, 1)
+
+        fit_x = P @ (sigma_sqrt[:,0] * ii)
+        fit_y = P @ (sigma_sqrt[:,1] * jj)
+        fit_z = P @ (sigma_sqrt[:,2] * kk)
+
     ii2aff = B @ fit_x
     jj2aff = B @ fit_y
     kk2aff = B @ fit_z
@@ -232,8 +262,8 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
 if __name__ == "__main__":
     start_time = time()
 
-    training_set = regress('data_lists/regress/train_list.csv', 'data/', is_training=True)
-    trainloader = data.DataLoader(training_set,batch_size=4,shuffle=True, drop_last=True, pin_memory=False) 
+    training_set = regress('data_lists/regress/test_list.csv', 'data/', is_training=True)
+    trainloader = data.DataLoader(training_set,batch_size=1,shuffle=True, drop_last=True, pin_memory=False) 
 
     batch = next(iter(trainloader))
     im, mask, target, seg, aff = batch
@@ -249,11 +279,13 @@ if __name__ == "__main__":
 
     model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to('cuda')
     model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
+
+    # model = UNet_3d(in_dim=1, out_dim=6, num_filters=4).to('cuda')
+    # model.load_state_dict(torch.load('experiments/regress/pre_train_single_sigma_l2_01_2/model_best.pth'))
     pred = model(im.to('cuda').to(dtype=torch.float)) 
-    channels_to_select = [0, 1, 2, 6, 7]
+    # channels_to_select = [0, 1, 2, 6, 7]
 
     # Define one-hot encoding   
-    from utilities import onehot_encoding
     label_list_segmentation = [0, 14, 15, 16,
                 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 17, 18, 26, 28, 
                 41, 42, 43, 44, 46, 47, 49, 50, 51, 52, 53, 54, 58, 60]
@@ -272,12 +304,12 @@ if __name__ == "__main__":
     MNISeg = torch.tensor(MNISeg, device='cuda', dtype=torch.int16)
     MNISeg = MNISeg[None, None, ...]
     seg_onehot = onehot_encoding(MNISeg, onehotmatrix, lut)
-    MNISeg = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int).squeeze()
 
-    DEFseg = least_square_fitting(pred[0, channels_to_select, :], Maff2, MNISeg)
+    DEFseg = least_square_fitting(pred[0, :], Maff2, seg_onehot.squeeze().permute(1, 2, 3, 0), 'true').permute(3, 0, 1, 2)
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 
-    new_seg = nib.Nifti1Image(DEFseg.cpu().detach().numpy(), affine=aff.cpu().detach().numpy())
+    deform_discrete_labels = torch.unsqueeze(torch.argmax(DEFseg, dim=0), dim=0).to(dtype=torch.int)
+    new_seg = nib.Nifti1Image(deform_discrete_labels[0,:,:,:].cpu().detach().numpy(), affine=aff.cpu().detach().numpy())
     new_seg.to_filename('samples/fitting_seg.nii.gz')
     import pdb; pdb.set_trace()
