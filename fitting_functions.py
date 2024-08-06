@@ -172,28 +172,23 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
 
     if pred_mni.shape[3] == 6:
         sigma_coor = torch.exp((pred_mni[:, :, :, 3]/100)[M])
+        weight = 1 / sigma_coor
         
-        P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(sigma_coor, 1) * B))) @ torch.transpose(B, 0, 1)
-        fit_x = P @ (sigma_coor * ii)
-        fit_y = P @ (sigma_coor * jj)
-        fit_z = P @ (sigma_coor * kk)
+        P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
+        fit_x = P @ (weight * ii)
+        fit_y = P @ (weight * jj)
+        fit_z = P @ (weight * kk)
 
-        # sigma_coor_sqrt = torch.sqrt(sigma_coor)
-        # B_weighted = B * sigma_coor_sqrt.unsqueeze(dim=1)
-        # P = torch.linalg.inv((torch.transpose(B_weighted, 0 ,1) @ B_weighted)) @ torch.transpose(B_weighted, 0, 1) 
-
-        # fit_x = P @ (sigma_coor_sqrt * ii)
-        # fit_y = P @ (sigma_coor_sqrt * jj)
-        # fit_z = P @ (sigma_coor_sqrt * kk)
     else:
         sigma_coor = torch.exp((pred_mni[:, :, :, 3:6]/100)[M])
-        sigma_coor_sqrt = torch.sqrt(sigma_coor)
-        B_weighted = B * torch.cat((sigma_coor_sqrt, torch.unsqueeze(o, dim=1)), dim=1)
-        P = torch.linalg.inv((torch.transpose(B_weighted, 0 ,1) @ B_weighted)) @ torch.transpose(B_weighted, 0, 1)
+        weight = 1 / sigma_coor
+        P_ii = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,0], 1) * B))) @ torch.transpose(B, 0, 1)
+        P_jj = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,1], 1) * B))) @ torch.transpose(B, 0, 1)
+        P_kk = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,2], 1) * B))) @ torch.transpose(B, 0, 1)
 
-        fit_x = P @ (sigma_coor_sqrt[:,0] * ii)
-        fit_y = P @ (sigma_coor_sqrt[:,1] * jj)
-        fit_z = P @ (sigma_coor_sqrt[:,2] * kk)
+        fit_x = P_ii @ (weight[:,0] * ii)
+        fit_y = P_jj @ (weight[:,1] * jj)
+        fit_z = P_kk @ (weight[:,2] * kk)
 
     ii2aff = B @ fit_x
     jj2aff = B @ fit_y
@@ -211,6 +206,8 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     #     jj2aff += jj_nonlin
     #     kk2aff += kk_nonlin
     if nonlin:
+
+        # Demons
         sigma = 3
         
         idef = ii - ii2aff
@@ -248,6 +245,9 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
         valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
         DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
         DEFseg[M] = valsDemon_seg
+
+        # Bspline
+
     else:
         # valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
         # DEFimg = torch.zeros_like(pred_mni[..., 0])
