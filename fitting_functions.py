@@ -11,6 +11,9 @@ from dataloader_aug_cc import regress
 from torch.utils import data
 import torch.nn.functional as F
 from utilities import onehot_encoding
+import sys
+sys.path.append('/autofs/space/durian_001/users/xh999/regre4regis/proj_supersynth_registration')
+import ext.interpol
 
 def MRIread(filename, dtype=None, im_only=False):
 
@@ -205,48 +208,87 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     #     ii2aff += ii_nonlin
     #     jj2aff += jj_nonlin
     #     kk2aff += kk_nonlin
-    if nonlin:
 
+    if nonlin:
         # Demons
-        sigma = 3
+
+        # sigma = 3
         
+        # idef = ii - ii2aff
+        # jdef = jj - jj2aff
+        # kdef = kk - kk2aff
+
+        # disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
+        # max_disp = torch.tensor(10.0, device='cuda')
+        # toofar = disp>max_disp
+
+        # new_idef = idef.clone()
+        # new_jdef = jdef.clone()
+        # new_kdef = kdef.clone()
+
+        # new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
+        # new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
+        # new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
+
+        # aux = torch.zeros_like(pred_mni[..., 0])
+        # aux[M] = new_idef
+        # num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+        # den = gaussian_blur_3d(M.float(), [sigma, sigma, sigma], device='cuda')
+        # new_idef = num[M] / den[M]
+        # aux[M] = new_jdef
+        # num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+        # new_jdef = num[M] / den[M]
+        # aux[M] = new_kdef
+        # num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+        # new_kdef = num[M] / den[M]
+
+        # ii2demon = ii2aff + new_idef
+        # jj2demon = jj2aff + new_jdef
+        # kk2demon = kk2aff + new_kdef
+
+        # valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
+        # DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
+        # DEFseg[M] = valsDemon_seg
+
+        # Bspline
+
+        # clip  outliers
         idef = ii - ii2aff
         jdef = jj - jj2aff
         kdef = kk - kk2aff
-
-        disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
+        disp = disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
         max_disp = torch.tensor(10.0, device='cuda')
-        toofar = disp>max_disp
+        toofar = disp > max_disp
+        idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
+        jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
+        kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
+        iifixed = ii2aff + idef
+        jjfixed = jj2aff + jdef
+        kkfixed = kk2aff + kdef
 
-        new_idef = idef.clone()
-        new_jdef = jdef.clone()
-        new_kdef = kdef.clone()
+        # fit bsplines
+        small_shape = tuple(np.ceil(np.array(pred_mni.shape[:-1]) / 2.5).astype(int))
+        iifixed_matrix = torch.zeros_like(pred_mni[..., 0])
+        iifixed_matrix[M] = iifixed
+        aux = ext.interpol.resize(iifixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
+        aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
+        ii2_bspline = aux2[M]
 
-        new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
-        new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
-        new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
+        jjfixed_matrix = torch.zeros_like(pred_mni[..., 0])
+        jjfixed_matrix[M] = jjfixed        
+        aux = ext.interpol.resize(jjfixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
+        aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
+        jj2_bspline = aux2[M]
 
-        aux = torch.zeros_like(pred_mni[..., 0])
-        aux[M] = new_idef
-        num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-        den = gaussian_blur_3d(M.float(), [sigma, sigma, sigma], device='cuda')
-        new_idef = num[M] / den[M]
-        aux[M] = new_jdef
-        num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-        new_jdef = num[M] / den[M]
-        aux[M] = new_kdef
-        num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-        new_kdef = num[M] / den[M]
+        kkfixed_matrix = torch.zeros_like(pred_mni[..., 0])
+        kkfixed_matrix[M] = kkfixed
+        aux = ext.interpol.resize(kkfixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
+        aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
+        kk2_bspline = aux2[M]
 
-        ii2demon = ii2aff + new_idef
-        jj2demon = jj2aff + new_jdef
-        kk2demon = kk2aff + new_kdef
-
-        valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
+        vals_bspline = fast_3D_interp_torch(MNISeg, ii2_bspline, jj2_bspline, kk2_bspline, 'linear', 'cuda')
         DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
-        DEFseg[M] = valsDemon_seg
-
-        # Bspline
+        DEFseg[M] = vals_bspline
 
     else:
         # valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
