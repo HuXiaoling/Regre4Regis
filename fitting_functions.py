@@ -14,7 +14,7 @@ from utilities import onehot_encoding
 import sys
 sys.path.append('/autofs/space/durian_001/users/xh999/regre4regis/proj_supersynth_registration')
 import ext.interpol
-
+torch.autograd.set_detect_anomaly(True)
 def MRIread(filename, dtype=None, im_only=False):
 
     assert filename.endswith(('.nii', '.nii.gz', '.mgz')), 'Unknown data file: %s' % filename
@@ -176,8 +176,10 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     if pred_mni.shape[3] == 6:
         sigma_coor = torch.exp((pred_mni[:, :, :, 3]/100)[M])
         weight = 1 / sigma_coor
-        
-        P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
+        try:
+            P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
+        except:
+            P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
         fit_x = P @ (weight * ii)
         fit_y = P @ (weight * jj)
         fit_z = P @ (weight * kk)
@@ -185,9 +187,18 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     else:
         sigma_coor = torch.exp((pred_mni[:, :, :, 3:6]/100)[M])
         weight = 1 / sigma_coor
-        P_ii = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,0], 1) * B))) @ torch.transpose(B, 0, 1)
-        P_jj = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,1], 1) * B))) @ torch.transpose(B, 0, 1)
-        P_kk = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,2], 1) * B))) @ torch.transpose(B, 0, 1)
+        try:
+            P_ii = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,0], 1) * B))) @ torch.transpose(B, 0, 1)
+        except:
+            P_ii = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,0], 1) * B))) @ torch.transpose(B, 0, 1)
+        try:
+            P_jj = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,1], 1) * B))) @ torch.transpose(B, 0, 1)
+        except:
+            P_jj = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,1], 1) * B))) @ torch.transpose(B, 0, 1)
+        try:
+            P_kk = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,2], 1) * B))) @ torch.transpose(B, 0, 1)
+        except:
+            P_kk = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,2], 1) * B))) @ torch.transpose(B, 0, 1)
 
         fit_x = P_ii @ (weight[:,0] * ii)
         fit_y = P_jj @ (weight[:,1] * jj)
@@ -256,15 +267,21 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
         idef = ii - ii2aff
         jdef = jj - jj2aff
         kdef = kk - kk2aff
-        disp = disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
+        disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
         max_disp = torch.tensor(10.0, device='cuda')
         toofar = disp > max_disp
-        idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
-        jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
-        kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
-        iifixed = ii2aff + idef
-        jjfixed = jj2aff + jdef
-        kkfixed = kk2aff + kdef
+
+        new_idef = idef.clone()
+        new_jdef = jdef.clone()
+        new_kdef = kdef.clone()
+        import pdb; pdb.set_trace()
+        new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
+        new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
+        new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
+
+        iifixed = ii2aff + new_idef
+        jjfixed = jj2aff + new_jdef
+        kkfixed = kk2aff + new_kdef
 
         # fit bsplines
         small_shape = tuple(np.ceil(np.array(pred_mni.shape[:-1]) / 2.5).astype(int))
@@ -319,11 +336,11 @@ if __name__ == "__main__":
     # im = im[0,:].to('cuda')
     aff = aff[0,:]
 
-    model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to('cuda')
-    model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
+    # model = UNet_3d(in_dim=1, out_dim=8, num_filters=4).to('cuda')
+    # model.load_state_dict(torch.load('experiments/regress/pre_train_l2_01_2/model_best.pth'))
 
-    # model = UNet_3d(in_dim=1, out_dim=6, num_filters=4).to('cuda')
-    # model.load_state_dict(torch.load('experiments/regress/pre_train_single_sigma_l2_01_2/model_best.pth'))
+    model = UNet_3d(in_dim=1, out_dim=6, num_filters=4).to('cuda')
+    model.load_state_dict(torch.load('experiments/regress/finetune_single_sigma_lap_l2_05_01_5/model_best.pth'))
     pred = model(im.to('cuda').to(dtype=torch.float)) 
     # channels_to_select = [0, 1, 2, 6, 7]
 
@@ -347,7 +364,7 @@ if __name__ == "__main__":
     MNISeg = MNISeg[None, None, ...]
     seg_onehot = onehot_encoding(MNISeg, onehotmatrix, lut)
 
-    DEFseg = least_square_fitting(pred[0, :], Maff2, seg_onehot.squeeze().permute(1, 2, 3, 0), 'true').permute(3, 0, 1, 2)
+    DEFseg = least_square_fitting(pred[0, :], Maff2, seg_onehot.squeeze().permute(1, 2, 3, 0), nonlin=True).permute(3, 0, 1, 2)
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 
