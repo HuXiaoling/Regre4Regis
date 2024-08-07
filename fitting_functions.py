@@ -179,7 +179,7 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
         try:
             P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
         except:
-            P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
+            P = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
         fit_x = P @ (weight * ii)
         fit_y = P @ (weight * jj)
         fit_z = P @ (weight * kk)
@@ -274,7 +274,7 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
         new_idef = idef.clone()
         new_jdef = jdef.clone()
         new_kdef = kdef.clone()
-        import pdb; pdb.set_trace()
+
         new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
         new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
         new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
