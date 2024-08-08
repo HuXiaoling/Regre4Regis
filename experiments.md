@@ -211,3 +211,10 @@
 | 8 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 2      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
+
+#### Finetune experimental results with both linear (least square + uncertainty) and non-linear (Bspline) deformations for $\lambda_{uncer} = 0.1$; finetune from non-linear models
+
+| Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
+| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| 8 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | To run    |

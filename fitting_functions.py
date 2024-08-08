@@ -176,10 +176,7 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     if pred_mni.shape[3] == 6:
         sigma_coor = torch.exp((pred_mni[:, :, :, 3]/100)[M])
         weight = 1 / sigma_coor
-        try:
-            P = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
-        except:
-            P = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
+        P = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight, 1) * B))) @ torch.transpose(B, 0, 1)
         fit_x = P @ (weight * ii)
         fit_y = P @ (weight * jj)
         fit_z = P @ (weight * kk)
@@ -187,18 +184,9 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     else:
         sigma_coor = torch.exp((pred_mni[:, :, :, 3:6]/100)[M])
         weight = 1 / sigma_coor
-        try:
-            P_ii = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,0], 1) * B))) @ torch.transpose(B, 0, 1)
-        except:
-            P_ii = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,0], 1) * B))) @ torch.transpose(B, 0, 1)
-        try:
-            P_jj = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,1], 1) * B))) @ torch.transpose(B, 0, 1)
-        except:
-            P_jj = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,1], 1) * B))) @ torch.transpose(B, 0, 1)
-        try:
-            P_kk = torch.linalg.inv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,2], 1) * B))) @ torch.transpose(B, 0, 1)
-        except:
-            P_kk = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,2], 1) * B))) @ torch.transpose(B, 0, 1)
+        P_ii = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,0], 1) * B))) @ torch.transpose(B, 0, 1)
+        P_jj = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,1], 1) * B))) @ torch.transpose(B, 0, 1)
+        P_kk = torch.linalg.pinv((torch.transpose(B, 0 ,1) @ (torch.unsqueeze(weight[:,2], 1) * B))) @ torch.transpose(B, 0, 1)
 
         fit_x = P_ii @ (weight[:,0] * ii)
         fit_y = P_jj @ (weight[:,1] * jj)
