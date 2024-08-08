@@ -227,6 +227,7 @@ def train_func(mydict):
             # with torch.autocast(device_type='cuda', dtype=torch.float16):
             y_pred = network(x)
             for i in range(x.shape[0]):
+                # channels_to_select = [0, 1, 2, 6, 7]
                 DEFseg[i,:] = least_square_fitting(y_pred[i, :].to(dtype=torch.float), Maff2, MNISeg_onehot.squeeze().permute(1, 2, 3, 0), 
                                                     nonlin=mydict['nonlin']).permute(3, 0, 1, 2)
 
