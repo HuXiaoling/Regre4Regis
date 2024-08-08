@@ -210,6 +210,7 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     #     ii2aff += ii_nonlin
     #     jj2aff += jj_nonlin
     #     kk2aff += kk_nonlin
+    
     if nonlin:
         # sigma = 3
         
