@@ -172,12 +172,8 @@
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 1     |   |   |   |   |   |
-| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   |   |
 | 8 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   |   |
 | 8 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   |   |
-| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 1     |   |   |   |   |   |
-| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   |   |
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   |   |
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   |   |
 
@@ -198,10 +194,11 @@
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Running   |
+| 8 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Done      |
 | 8 channels    | 1    | 0.5 | Laplacian 0.1   | 2      |  |  |  |  | Running   |
 | 8 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
-| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Running   |
+| 8 channels    | 1    | 0.5 | Laplacian 0.1   | 10     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1   | 1      |  |  |  |  | Done      |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 2      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 10     |  |  |  |  | Running   |
