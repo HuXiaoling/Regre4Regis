@@ -281,7 +281,7 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
         ii2_bspline = aux2[M]
 
         jjfixed_matrix = torch.zeros_like(pred_mni[..., 0])
-        jjfixed_matrix[M] = jjfixed        
+        jjfixed_matrix[M] = jjfixed
         aux = ext.interpol.resize(jjfixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
         aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
         jj2_bspline = aux2[M]
