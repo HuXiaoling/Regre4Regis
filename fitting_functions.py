@@ -272,8 +272,9 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
         jjfixed = jj2aff + new_jdef
         kkfixed = kk2aff + new_kdef
 
+        small_shape = tuple(np.ceil(np.array(pred_mni.shape[:-1]) / 5).astype(int))
+
         # fit bsplines
-        small_shape = tuple(np.ceil(np.array(pred_mni.shape[:-1]) / 2.5).astype(int))
         iifixed_matrix = torch.zeros_like(pred_mni[..., 0])
         iifixed_matrix[M] = iifixed
         aux = ext.interpol.resize(iifixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
@@ -295,6 +296,20 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
         vals_bspline = fast_3D_interp_torch(MNISeg, ii2_bspline, jj2_bspline, kk2_bspline, 'linear', 'cuda')
         DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
         DEFseg[M] = vals_bspline
+
+        # weight bsplines
+        # import pdb; pdb.set_trace()
+        # # from Bspline_fitting_direct import weighted_bspline_direct_scipy
+        # # ii2_bspline = weighted_bspline_direct_scipy(iifixed.detach(), weight.detach(), small_shape)
+
+        # from Bspline_optimization import weighted_bspline_registration
+        # fixed_image = torch.zeros_like(pred_mni[..., 0])
+        # fixed_image[M] = ii
+        # moving_image = torch.zeros_like(pred_mni[..., 0])
+        # moving_image[M] = iifixed
+        # moving_weights = weight
+        # control_points = torch.zeros(3, 20, 20, 20, device=moving_image.device, requires_grad=True)
+        # registered_image, final_control_points = weighted_bspline_registration(fixed_image, moving_image, moving_weights, control_points)
 
     else:
         # valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
@@ -352,7 +367,7 @@ if __name__ == "__main__":
     seg_onehot = onehot_encoding(MNISeg, onehotmatrix, lut)
     MNISeg = torch.unsqueeze(torch.argmax(seg_onehot, dim=1), dim=1).to(dtype=torch.int).squeeze()
 
-    DEFseg = least_square_fitting(pred[0, channels_to_select, :], Maff2, MNISeg)
+    DEFseg = least_square_fitting(pred[0,:].to(dtype=torch.float), Maff2, seg_onehot.squeeze().permute(1, 2, 3, 0), nonlin=True).permute(3, 0, 1, 2)
     end_time = time()
     print("LSF took {} seconds.".format(end_time-start_time))
 
