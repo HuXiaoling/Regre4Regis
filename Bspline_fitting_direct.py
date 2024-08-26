@@ -101,38 +101,6 @@ def weighted_bspline_lsqt_scipy(moving_image, moving_weights, control_points_sha
     coefficient = lsqr(W_prime, b_prime)[0]
     return coefficient
 
-def weighted_bspline_direct(moving_image, moving_weights, control_points_shape):
-
-    BigX = np.zeros([control_points_shape[0], 256])
-    BigY = np.zeros([control_points_shape[1], 256])
-    BigZ = np.zeros([control_points_shape[2], 256])
-    for i in range(control_points_shape[0]):
-        small = torch.zeros(control_points_shape[0])
-        small[i] = 1
-        BigX[i] = ext.interpol.resize(small, shape = 256, prefilter=False)
-    for j in range(control_points_shape[1]):
-        small = torch.zeros(control_points_shape[1])
-        small[j] = 1
-        BigY[j] = ext.interpol.resize(small, shape = 256, prefilter=False)
-    for k in range(control_points_shape[2]):
-        small = torch.zeros(control_points_shape[2])
-        small[k] = 1
-        BigZ[k] = ext.interpol.resize(small, shape = 256, prefilter=False)
-
-    sBigX = sparse.csr_matrix(BigX)
-    sBigY = sparse.csr_matrix(BigY)
-    sBigZ = sparse.csr_matrix(BigZ)
-    import pdb; pdb.set_trace()
-    sparse_basis = sparse.kron(sBigX, sparse.kron(sBigY, sBigZ))
-
-    # numpy ver
-    moving_weights = np.sqrt(moving_weights.flatten().cpu().numpy())
-    W_prime = sp.diags(moving_weights) * sparse_basis.T
-    b_prime = moving_weights * moving_image.detach().flatten().cpu().numpy()
-    
-    coefficient = lsqr(W_prime, b_prime)[0]
-    return coefficient
-
 # Example Usage
 if __name__ == "__main__":
 
