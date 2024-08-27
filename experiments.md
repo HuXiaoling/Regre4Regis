@@ -215,3 +215,14 @@
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 15     |  |  |  |  | Running   |
+
+#### Time for invese matrix
+
+| # of components | time (seconds) |
+| :----: | :----: |
+| 10    | 289   |
+| 20    | 161   |
+| 50    | 269   |
+| 100   | 469   |
+| 150   | 960   |
+| 200   | |
