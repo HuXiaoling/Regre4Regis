@@ -292,20 +292,23 @@ def train_func(mydict):
                         train_loss = mydict['loss_weight_mask'] * mask_loss + mydict['loss_weight_uncer'] * uncer_loss + mydict['loss_weight_seg'] * seg_loss
 
                 if torch.isnan(train_loss):
-                    print("NaN detected in training loss. Exiting...")
-                    sys.exit(1)
+                    print("NaN detected in training loss. Skipping this sample...")
+                    pass
                 
                 writer.add_scalar('Loss/train', train_loss, step + epoch * num_batches)
                 avg_train_loss += train_loss
+            try:
+                scaler.scale(train_loss).backward()
+                scaler.unscale_(optimizer)
 
-            scaler.scale(train_loss).backward()
-            scaler.unscale_(optimizer)
+                # Gradient clipping
+                torch.nn.utils.clip_grad_norm_(network.parameters(), 1.0)
 
-            # Gradient clipping
-            torch.nn.utils.clip_grad_norm_(network.parameters(), 1.0)
-
-            scaler.step(optimizer)
-            scaler.update()
+                scaler.step(optimizer)
+                scaler.update()
+            except:
+                print("NaN detected in training loss. Skipping this sample...")
+                pass
 
         avg_train_loss /= num_batches
         epoch_end_time = time()
