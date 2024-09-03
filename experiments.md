@@ -175,7 +175,7 @@
 | 8 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   | Running   |
 | 8 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   | Running   |
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   | Running   |
-| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   | To run    |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   | Running   |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{uncer} = 0.1$
 
