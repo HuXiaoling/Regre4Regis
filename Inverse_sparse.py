@@ -18,25 +18,26 @@ import scipy.sparse as sp
 # Example Usage
 if __name__ == "__main__":
     start_time = time()
-    shape = 50
+    shape = 20
+    big_shape = 192
     control_points_shape = (shape, shape, shape)
-    BigX = torch.zeros([control_points_shape[0], 256])
-    BigY = torch.zeros([control_points_shape[1], 256])
-    BigZ = torch.zeros([control_points_shape[2], 256])
+    BigX = torch.zeros([control_points_shape[0], big_shape])
+    BigY = torch.zeros([control_points_shape[1], big_shape])
+    BigZ = torch.zeros([control_points_shape[2], big_shape])
     for i in range(control_points_shape[0]):
         small = torch.zeros(control_points_shape[0])
         small[i] = 1
-        BigX[i] = ext.interpol.resize(small, shape = 256, prefilter=False)
+        BigX[i] = ext.interpol.resize(small, shape = big_shape, prefilter=False)
     for j in range(control_points_shape[1]):
         small = torch.zeros(control_points_shape[1])
         small[j] = 1
-        BigY[j] = ext.interpol.resize(small, shape = 256, prefilter=False)
+        BigY[j] = ext.interpol.resize(small, shape = big_shape, prefilter=False)
     for k in range(control_points_shape[2]):
         small = torch.zeros(control_points_shape[2])
         small[k] = 1
-        BigZ[k] = ext.interpol.resize(small, shape = 256, prefilter=False)
+        BigZ[k] = ext.interpol.resize(small, shape = big_shape, prefilter=False)
 
-    W = torch.rand(256, 256, 256).flatten()
+    W = torch.rand(big_shape, big_shape, big_shape).flatten()
 
     # Economy QR decomposition of A
     Q_econX, R_econX = np.linalg.qr(BigX.T, mode='reduced')
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     clipped_col = col[nonzero_indices]
     Q_temp_clipped = coo_matrix((clipped_data, (clipped_row, clipped_col)), shape=Q_temp.shape)
 
-    # Clip R_temp
+    # Clip R_temp 
     data = R_temp.data
     row = R_temp.row
     col = R_temp.col
@@ -115,6 +116,7 @@ if __name__ == "__main__":
 
     # W_sparse = sp.diags(W.numpy()) # Convert to 1D array and then to diagonal matrix
 
+    start_time_1 = time()
     W_sparse = sp.diags(W.numpy(), offsets=0, format='csr')
 
     # Clip inverse
@@ -150,4 +152,5 @@ if __name__ == "__main__":
     # print("Inverse error:", error)
 
     end_time = time()
+    print("Inverse took {} seconds if Q and R are prepared.".format(end_time-start_time_1))
     print("Inverse took {} seconds.".format(end_time-start_time))

@@ -49,6 +49,7 @@ def parse_func(args):
     mydict['regress_loss'] = params['train']['regress_loss']
     mydict['uncer'] = params['train']['uncer']
     mydict['nonlin'] = params['train']['nonlin']
+    mydict['fitting'] = params['train']['fitting']
     mydict['output_folder'] = params['train']['output_folder']
     mydict['loss_weight_mask'] = params['train']['loss_weight_mask']
     mydict['loss_weight_uncer'] = params['train']['loss_weight_uncer']
@@ -170,6 +171,7 @@ def train_func(mydict):
     p['regress_loss'] = mydict['regress_loss']
     p['uncer'] = mydict['uncer']
     p['nonlin'] = mydict['nonlin']
+    p['fitting'] = mydict['fitting']
     p['loss_weight_mask'] = mydict['loss_weight_mask']
     p['loss_weight_uncer'] = mydict['loss_weight_uncer']
     p['loss_weight_seg'] = mydict['loss_weight_seg']
@@ -230,7 +232,7 @@ def train_func(mydict):
                     for i in range(x.shape[0]):
                         # channels_to_select = [0, 1, 2, 6, 7]
                         DEFseg[i,:] = least_square_fitting(y_pred[i, :].to(dtype=torch.float), Maff2, MNISeg_onehot.squeeze().permute(1, 2, 3, 0), 
-                                                            nonlin=mydict['nonlin']).permute(3, 0, 1, 2)
+                                                            fitting=mydict['fitting'], nonlin=mydict['nonlin']).permute(3, 0, 1, 2)
 
                     y_gt = y_gt * mask
                     seg_onehot = seg_onehot * mask
@@ -342,7 +344,7 @@ def train_func(mydict):
                     seg_onehot = onehot_encoding(seg, onehotmatrix, lut)
                     DEFseg = torch.empty_like(seg_onehot)
                     DEFseg[0,:] = least_square_fitting(y_pred[0, :].to(dtype=torch.float), Maff2, MNISeg_onehot.squeeze().permute(1, 2, 3, 0), 
-                                                       nonlin=mydict['nonlin']).permute(3, 0, 1, 2)
+                                                       fitting=mydict['fitting'], nonlin=mydict['nonlin']).permute(3, 0, 1, 2)
                     
                     y_gt = y_gt * mask
                     seg_onehot = seg_onehot * mask

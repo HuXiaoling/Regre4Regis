@@ -137,7 +137,7 @@ def gaussian_blur_3d(input, stds, device):
         blurred = conv3d(blurred, kz[None, None, None, None, :], stride=1, padding=(0, 0, len(kz) // 2))
     return torch.squeeze(blurred)
 
-def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
+def least_square_fitting(pred, aff2, MNISeg, fitting, nonlin=False):
  
     pred = 100 * pred
     pred_mni = pred.permute([1, 2, 3, 0])
@@ -212,90 +212,92 @@ def least_square_fitting(pred, aff2, MNISeg, nonlin=False):
     #     kk2aff += kk_nonlin
     
     if nonlin:
-        # sigma = 3
-        
-        # idef = ii - ii2aff
-        # jdef = jj - jj2aff
-        # kdef = kk - kk2aff
+        if fitting == 'demon':
+            sigma = 3
+            
+            idef = ii - ii2aff
+            jdef = jj - jj2aff
+            kdef = kk - kk2aff
 
-        # disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
-        # max_disp = torch.tensor(10.0, device='cuda')
-        # toofar = disp>max_disp
+            disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
+            max_disp = torch.tensor(10.0, device='cuda')
+            toofar = disp>max_disp
 
-        # new_idef = idef.clone()
-        # new_jdef = jdef.clone()
-        # new_kdef = kdef.clone()
+            new_idef = idef.clone()
+            new_jdef = jdef.clone()
+            new_kdef = kdef.clone()
 
-        # new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
-        # new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
-        # new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
+            new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
+            new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
+            new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
 
-        # aux = torch.zeros_like(pred_mni[..., 0])
-        # aux[M] = new_idef
-        # num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-        # den = gaussian_blur_3d(M.float(), [sigma, sigma, sigma], device='cuda')
-        # new_idef = num[M] / den[M]
-        # aux[M] = new_jdef
-        # num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-        # new_jdef = num[M] / den[M]
-        # aux[M] = new_kdef
-        # num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
-        # new_kdef = num[M] / den[M]
+            aux = torch.zeros_like(pred_mni[..., 0])
+            aux[M] = new_idef
+            num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+            den = gaussian_blur_3d(M.float(), [sigma, sigma, sigma], device='cuda')
+            new_idef = num[M] / den[M]
+            aux[M] = new_jdef
+            num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+            new_jdef = num[M] / den[M]
+            aux[M] = new_kdef
+            num = gaussian_blur_3d(aux, [sigma, sigma, sigma], device='cuda')
+            new_kdef = num[M] / den[M]
 
-        # ii2demon = ii2aff + new_idef
-        # jj2demon = jj2aff + new_jdef
-        # kk2demon = kk2aff + new_kdef
+            ii2demon = ii2aff + new_idef
+            jj2demon = jj2aff + new_jdef
+            kk2demon = kk2aff + new_kdef
 
-        # valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
-        # DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
-        # DEFseg[M] = valsDemon_seg
+            valsDemon_seg = fast_3D_interp_torch(MNISeg, ii2demon, jj2demon, kk2demon, 'linear', device='cuda')
+            DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
+            DEFseg[M] = valsDemon_seg
 
-        # Bspline
+        else:
+            # Bspline
 
-        # clip  outliers
-        idef = ii - ii2aff
-        jdef = jj - jj2aff
-        kdef = kk - kk2aff
-        disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
-        max_disp = torch.tensor(10.0, device='cuda')
-        toofar = disp > max_disp
+            # clip  outliers
+            idef = ii - ii2aff
+            jdef = jj - jj2aff
+            kdef = kk - kk2aff
+            disp = torch.sqrt(torch.square(idef) + torch.square(jdef) + torch.square(kdef))
+            max_disp = torch.tensor(10.0, device='cuda')
+            toofar = disp > max_disp
 
-        new_idef = idef.clone()
-        new_jdef = jdef.clone()
-        new_kdef = kdef.clone()
+            new_idef = idef.clone()
+            new_jdef = jdef.clone()
+            new_kdef = kdef.clone()
 
-        new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
-        new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
-        new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
+            new_idef[toofar] = (idef[toofar] / disp[toofar]) * max_disp
+            new_jdef[toofar] = (jdef[toofar] / disp[toofar]) * max_disp
+            new_kdef[toofar] = (kdef[toofar] / disp[toofar]) * max_disp
 
-        iifixed = ii2aff + new_idef
-        jjfixed = jj2aff + new_jdef
-        kkfixed = kk2aff + new_kdef
+            iifixed = ii2aff + new_idef
+            jjfixed = jj2aff + new_jdef
+            kkfixed = kk2aff + new_kdef
 
-        small_shape = tuple(np.ceil(np.array(pred_mni.shape[:-1]) / 5).astype(int))
+            small_shape = tuple(np.ceil(np.array(pred_mni.shape[:-1]) / 5).astype(int))
 
-        # fit bsplines
-        iifixed_matrix = torch.zeros_like(pred_mni[..., 0])
-        iifixed_matrix[M] = iifixed
-        aux = ext.interpol.resize(iifixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
-        aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
-        ii2_bspline = aux2[M]
+            # fit bsplines
+            iifixed_matrix = torch.zeros_like(pred_mni[..., 0])
+            iifixed_matrix[M] = iifixed
+            aux = ext.interpol.resize(iifixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
+            aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
+            ii2_bspline = aux2[M]
 
-        jjfixed_matrix = torch.zeros_like(pred_mni[..., 0])
-        jjfixed_matrix[M] = jjfixed
-        aux = ext.interpol.resize(jjfixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
-        aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
-        jj2_bspline = aux2[M]
+            jjfixed_matrix = torch.zeros_like(pred_mni[..., 0])
+            jjfixed_matrix[M] = jjfixed
+            aux = ext.interpol.resize(jjfixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
+            aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
+            jj2_bspline = aux2[M]
 
-        kkfixed_matrix = torch.zeros_like(pred_mni[..., 0])
-        kkfixed_matrix[M] = kkfixed
-        aux = ext.interpol.resize(kkfixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
-        aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
-        kk2_bspline = aux2[M]
+            kkfixed_matrix = torch.zeros_like(pred_mni[..., 0])
+            kkfixed_matrix[M] = kkfixed
+            aux = ext.interpol.resize(kkfixed_matrix, shape=small_shape, interpolation=3, prefilter=True)
+            aux2 = ext.interpol.resize(aux, shape=pred_mni.shape[:-1], interpolation=3, prefilter=False)
+            kk2_bspline = aux2[M]
 
-        vals_bspline = fast_3D_interp_torch(MNISeg, ii2_bspline, jj2_bspline, kk2_bspline, 'linear', 'cuda')
-        DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
-        DEFseg[M] = vals_bspline
+            vals_bspline = fast_3D_interp_torch(MNISeg, ii2_bspline, jj2_bspline, kk2_bspline, 'linear', 'cuda')
+            DEFseg = torch.zeros([pred_mni.shape[0], pred_mni.shape[1], pred_mni.shape[2], 32], device='cuda')
+            DEFseg[M] = vals_bspline
 
     else:
         # valsAff = fast_3D_interp_torch(MNI, ii2aff, jj2aff, kk2aff, 'linear', device='cuda')
