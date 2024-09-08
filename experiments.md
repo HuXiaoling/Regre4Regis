@@ -172,12 +172,12 @@
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   | Running   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   | Done      |
 | 8 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   | Done      |
-| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   | Running   |
+| 8 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   | Done      |
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 2     |   |   |   |   | Running   |
 | 6 channels    | 1 | 0.5   | Laplacian 0.05    | 5     |   |   |   |   | Done      |
-| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   | Running   |
+| 6 channels    | 1 | 0.5   | Laplacian 0.05    | 10    |   |   |   |   | Done      |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{uncer} = 0.1$
 
@@ -199,11 +199,39 @@
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2      |  |  |  |  | Running  |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | To run   |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | To run   |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | Running  |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | Running  |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2      |  |  |  |  | Running  |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | Running  |
 | 6 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | Running  |
+
+#### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{uncer} = 0.1$: using gaussian distribution
+
+| Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
+| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| 8 channels    | 1    | 0.5 | Gaussian 0.05    | 5     |  |  |  |  | N/A       |
+| 8 channels    | 1    | 0.5 | Gaussian 0.05    | 10    |  |  |  |  | N/A       |
+| 8 channels    | 1    | 0.5 | Gaussian 0.1     | 5     |  |  |  |  | N/A       |
+| 8 channels    | 1    | 0.5 | Gaussian 0.1     | 10    |  |  |  |  | N/A       |
+| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 5     |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 10    |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 5     |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 10    |  |  |  |  | To run    |
+
+#### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{uncer} = 0.1$: using l1 regression loss
+
+| Setting | regress loss (l1) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
+| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 5     |  |  |  |  | N/A       |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 10    |  |  |  |  | N/A       |
+| 8 channels    | 1    | 0.5 | Laplacian 0.1    | 5     |  |  |  |  | N/A       |
+| 8 channels    | 1    | 0.5 | Laplacian 0.1    | 10    |  |  |  |  | N/A       |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 5     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 10    |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1    | 5     |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Laplacian 0.1    | 10    |  |  |  |  | To run    |
+
+### End2end experimental results (incorporating uncertainty during training)
 
 #### Finetune experimental results with both linear (least square + uncertainty) and non-linear (Bspline) deformations for $\lambda_{uncer} = 0.1$; finetune from non-linear models
 
@@ -219,14 +247,3 @@
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 5      |  |  |  |  | Done  |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 10     |  |  |  |  | Done  |
 | 6 channels    | 1    | 0.5 | Laplacian 0.1   | 15     |  |  |  |  | Done  |
-
-#### Time for invese matrix
-
-| # of components | time (seconds) |
-| :----: | :----: |
-| 10    | 289   |
-| 20    | 161   |
-| 50    | 269   |
-| 100   | 469   |
-| 150   | 960   |
-| 200   | |
