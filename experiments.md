@@ -198,12 +198,12 @@
 
 | Setting | regress loss (l2) | mask loss | uncer loss | seg loss | mask | x | y | z | States |
 | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2      |  |  |  |  | Running  |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | Running  |
-| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | Running  |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2      |  |  |  |  | Running  |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | Running  |
-| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | Running  |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 2      |  |  |  |  | Done |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | Done |
+| 8 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | Done |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 2      |  |  |  |  | Done |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 5      |  |  |  |  | Done |
+| 6 channels    | 1    | 0.5 | Laplacian 0.05   | 10     |  |  |  |  | Done |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{uncer} = 0.1$: using gaussian distribution
 
@@ -213,10 +213,15 @@
 | 8 channels    | 1    | 0.5 | Gaussian 0.05    | 10    |  |  |  |  | N/A       |
 | 8 channels    | 1    | 0.5 | Gaussian 0.1     | 5     |  |  |  |  | N/A       |
 | 8 channels    | 1    | 0.5 | Gaussian 0.1     | 10    |  |  |  |  | N/A       |
-| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 5     |  |  |  |  | To run    |
-| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 10    |  |  |  |  | To run    |
-| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 5     |  |  |  |  | To run    |
-| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 10    |  |  |  |  | To run    |
+| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 2     |  |  |  |  | To run   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 5     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 10    |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 2    |  |  |  |  | To run   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 5     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 10    |  |  |  |  | Running   |
+
+| 6 channels    | 1 (0.0279)    | 0.5 (-0.7230) | Gaussian  0.05 (0.9441)   | &check;   | &check;   | &check;   | &check;   | Yes   |
+| 6 channels    | 1 (0.0262)    | 0.5 (-0.7177) | Gaussian  0.1  (0.8739)   | &check;   | &check;   | &check;   | &check;   | Yes   |
 
 #### Finetune experimental results with both linear (least square) and non-linear (demon) deformations for $\lambda_{uncer} = 0.1$: using l1 regression loss
 
