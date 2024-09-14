@@ -213,10 +213,10 @@
 | 8 channels    | 1    | 0.5 | Gaussian 0.05    | 10    |  |  |  |  | N/A       |
 | 8 channels    | 1    | 0.5 | Gaussian 0.1     | 5     |  |  |  |  | N/A       |
 | 8 channels    | 1    | 0.5 | Gaussian 0.1     | 10    |  |  |  |  | N/A       |
-| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 2     |  |  |  |  | To run   |
-| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 5     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 2     |  |  |  |  | Running   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.05    | 5     |  |  |  |  | Done      |
 | 6 channels    | 1    | 0.5 | Gaussian 0.05    | 10    |  |  |  |  | Running   |
-| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 2    |  |  |  |  | To run   |
+| 6 channels    | 1    | 0.5 | Gaussian 0.1     | 2     |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Gaussian 0.1     | 5     |  |  |  |  | Running   |
 | 6 channels    | 1    | 0.5 | Gaussian 0.1     | 10    |  |  |  |  | Running   |
 
