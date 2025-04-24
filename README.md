@@ -69,3 +69,20 @@ python3 main_end2end.py --params params/regress_train.json ("mode": "pre" or "tr
 ```
 python3 main_end2end_single_sigma.py --params params/regress_train.json ("mode": "pre" or "training")
 ```
+
+# Citation
+If you found this repository useful, please consider citing our paper:
+```bibtex
+@inproceedings{gopinath2024registration,
+  title={Registration by regression (RbR): A framework for interpretable and flexible atlas registration},
+  author={Gopinath, Karthik and Hu, Xiaoling and Hoffmann, Malte and Puonti, Oula and Iglesias, Juan Eugenio},
+  booktitle={International Workshop on Biomedical Image Registration},
+  year={2024},
+}
+
+@inproceedings{hu2024hierarchical,
+  title={Hierarchical uncertainty estimation for learning-based registration in neuroimaging},
+  author={Hu, Xiaoling and Gopinath, Karthik and Liu, Peirong and Hoffmann, Malte and Van Leemput, Koen and Puonti, Oula and Iglesias, Juan Eugenio},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2025}
+}
