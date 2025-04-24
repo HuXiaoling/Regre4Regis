@@ -2,6 +2,10 @@
 
 ## Two stages setting
 
+<p align="center">
+  <img src="./figures/rgr_WBIR.png" alt="drawing", width="850"/>
+</p>
+
 ### Stage 1: Regress the coordinates (and their uncertainty/distributions)
 
 #### Option 1: Only regress the coordinates directly
@@ -56,6 +60,10 @@ python ./scripts/test_inference_only_reg_many_models_ours.py
     --checkpoint_restore experiments/regress/train_outputs_full_aug_yogurt_2/model_best.pth
 ```
 ## End2end
+
+<p align="center">
+  <img src="./figures/regis_uncertainty.png" alt="drawing", width="850"/>
+</p>
 
 ### Setting1: regress sigma for each channel separately (three sigmas)
 
